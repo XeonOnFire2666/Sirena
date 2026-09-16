@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Google.Apis.Auth" Version="1.75.0" />
+      <PackageReference Include="Google.Apis.Auth.AspNetCore3" Version="1.75.0" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.9" />
+      <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.19.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\web.Logic\SirenaAPI.Logic.csproj" />
+    </ItemGroup>
+
+</Project>

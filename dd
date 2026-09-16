@@ -1,0 +1,23 @@
+[33mcommit de0c21d70a1d78a47475ab20ad3dc37743ea41d5[m
+Author: Your Name <you@example.com>
+Date:   Tue Mar 17 22:15:10 2026 +0300
+
+    Problem fixing
+
+[33mcommit 309f73a57576c8898da1ce52ad09597f724b54d7[m
+Author: Your Name <you@example.com>
+Date:   Fri Dec 19 12:35:38 2025 +0300
+
+    Fix Cs
+
+[33mcommit a5f6eb0742cc7fe09909ee94f34f86503cba684d[m
+Author: Your Name <you@example.com>
+Date:   Sun Nov 9 15:10:04 2025 +0300
+
+    switch to postgresql
+
+[33mcommit 056d3e551125943d16bd03a81d627cf752a01130[m
+Author: Your Name <you@example.com>
+Date:   Thu Nov 6 18:59:12 2025 +0300
+
+    2 init
