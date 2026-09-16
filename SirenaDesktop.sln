@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.8.12009.203 stable
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SirenaDesktop.WPF", "SirenaDesktop\SirenaDesktop.WPF.csproj", "{1B389CC0-F534-4ED6-92A4-ECAC73CDAA86}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SirenaDesktop.Tests", "SirenaDesktop.Tests\SirenaDesktop.Tests.csproj", "{D91440C8-D4E3-41C4-945C-D6D95A7C8DB2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SirenaDesktop.Core", "SirenaDesktop.Core\SirenaDesktop.Core.csproj", "{BA7C46C5-DF70-4561-AFD5-7150F7C69F1E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SirenaDesktop.Application", "SirenaDesktop.Application\SirenaDesktop.Application.csproj", "{FA2D1F25-EF02-4F22-92D3-BC74F82C96D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SirenaDesktop.Infrastructure", "SirenaDesktop.Infrastructure\SirenaDesktop.Infrastructure.csproj", "{10E97F33-A822-49BA-8CBE-E84BD5A5DB85}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SirenaDesktop.Presentation", "SirenaDesktop.Presentation\SirenaDesktop.Presentation.csproj", "{0F2B5624-2ACB-49D8-80E2-05342E739D1F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1B389CC0-F534-4ED6-92A4-ECAC73CDAA86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B389CC0-F534-4ED6-92A4-ECAC73CDAA86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B389CC0-F534-4ED6-92A4-ECAC73CDAA86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B389CC0-F534-4ED6-92A4-ECAC73CDAA86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D91440C8-D4E3-41C4-945C-D6D95A7C8DB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D91440C8-D4E3-41C4-945C-D6D95A7C8DB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D91440C8-D4E3-41C4-945C-D6D95A7C8DB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D91440C8-D4E3-41C4-945C-D6D95A7C8DB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA7C46C5-DF70-4561-AFD5-7150F7C69F1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA7C46C5-DF70-4561-AFD5-7150F7C69F1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA7C46C5-DF70-4561-AFD5-7150F7C69F1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA7C46C5-DF70-4561-AFD5-7150F7C69F1E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA2D1F25-EF02-4F22-92D3-BC74F82C96D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA2D1F25-EF02-4F22-92D3-BC74F82C96D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA2D1F25-EF02-4F22-92D3-BC74F82C96D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA2D1F25-EF02-4F22-92D3-BC74F82C96D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10E97F33-A822-49BA-8CBE-E84BD5A5DB85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10E97F33-A822-49BA-8CBE-E84BD5A5DB85}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10E97F33-A822-49BA-8CBE-E84BD5A5DB85}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10E97F33-A822-49BA-8CBE-E84BD5A5DB85}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F2B5624-2ACB-49D8-80E2-05342E739D1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F2B5624-2ACB-49D8-80E2-05342E739D1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F2B5624-2ACB-49D8-80E2-05342E739D1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F2B5624-2ACB-49D8-80E2-05342E739D1F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {265B6533-0B62-4148-98C4-AF396B3EA7E6}
+	EndGlobalSection
+EndGlobal

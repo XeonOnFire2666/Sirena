@@ -1,0 +1,77 @@
+﻿<Window x:Class="SirenaDesktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:viewModels="clr-namespace:SirenaDesktop.ViewModels"
+        xmlns:views="clr-namespace:SirenaDesktop.Views"
+
+        mc:Ignorable="d"
+
+        Title="Sirena"
+        SizeToContent="Manual"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource MaterialDesignWindow}"
+        Background="{DynamicResource MaterialDesign.Brush.Background}"
+
+        TextElement.Foreground="{DynamicResource MaterialDesign.Brush.OnBackground}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="14"
+        RenderOptions.ClearTypeHint="Enabled"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+
+        Width="1020"
+        Height="700"
+
+        MinWidth="830"
+        MinHeight="550"
+
+        d:DataContext="{d:DesignInstance Type=viewModels:MainWindowViewModel, IsDesignTimeCreatable=False}">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
+        <DataTemplate DataType="{x:Type viewModels:SplashViewModel}">
+            <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+                <StackPanel>
+                    <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                 Value="0"
+                                 IsIndeterminate="True"
+                                 Width="48"
+                                 Height="48"
+                                 Margin="0,0,0,16"
+                                 Foreground="{DynamicResource MaterialDesign.Brush.Primary}" />
+
+                    <TextBlock Text="Проверка сессии..."
+                               Style="{StaticResource MaterialDesignBodyMediumTextBlock}"
+                               HorizontalAlignment="Center"
+                               Opacity="0.6" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type viewModels:LoginViewModel}">
+            <views:LoginView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type viewModels:MainMenuViewModel}">
+            <views:MainMenuView />
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <materialDesign:TransitioningContent Content="{Binding CurrentViewModel}">
+            <materialDesign:TransitioningContent.OpeningEffect>
+                <materialDesign:TransitionEffect Kind="FadeIn" Duration="0:0:0.3" />
+            </materialDesign:TransitioningContent.OpeningEffect>
+        </materialDesign:TransitioningContent>
+
+        <ProgressBar Style="{StaticResource MaterialDesignLinearProgressBar}"
+                     VerticalAlignment="Top"
+                     IsIndeterminate="True"
+                     Visibility="{Binding IsNavigationLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+                     Foreground="{DynamicResource MaterialDesign.Brush.Primary}" />
+    </Grid>
+</Window>

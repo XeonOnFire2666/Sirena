@@ -1,0 +1,36 @@
+namespace SirenaDesktop.Core.Enums;
+
+public enum IconType
+{
+    None,
+    HomeOutline,
+    TimerOutline,
+    Checklist,
+    ChartBar,
+    CodeBraces,
+    SchoolOutline,
+    BriefcaseOutline,
+    PaletteOutline,
+    Wheelchair,
+    Google,
+    AccountCircle,
+    Cog,
+    Close,
+    Fire,
+    Monitor,
+    Smartphone,
+    Calendar,
+    Filter,
+    Plus,
+    Edit,
+    Delete,
+    Check,
+    Clock,
+    ArrowLeft,
+    ArrowRight,
+    Settings,
+    Logout,
+    Git,
+    CheckCircle,
+    AlertCircle
+}
