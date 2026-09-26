@@ -37,12 +37,11 @@ public interface IUserRepository<T>
     public Task Update(T entity, CancellationToken ct = default);
     public Task<T?> GetByEmail (string email, CancellationToken ct = default);
     public Task<T?> GetByGoogleId(string googleSub, CancellationToken ct = default);
-    // public Task<bool> SimpleCheckStatus(string name);
 }
 public interface ITokenRepository<T>
 {
     public Task<RefreshToken> GetById(Guid id);
     public Task Add(T entity, CancellationToken ct = default);
     public Task Delete(Guid id, CancellationToken ct = default);
-    public Task<int> Update(Guid oldId, Guid newId, CancellationToken ct = default);
+    public Task<int> Update(Guid oldId, Guid newId, DateTime newExpiry, CancellationToken ct = default);
 }

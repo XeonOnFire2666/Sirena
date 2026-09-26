@@ -103,7 +103,7 @@ public class UserService(
         }
 
         var newRefreshToken = _jwtProvider.GenerateRefreshToken(refreshToken.UserId);
-        var affected = await _tokenRepository.Update(refreshToken.TokenNahuy, newRefreshToken.TokenNahuy);
+        var affected = await _tokenRepository.Update(refreshToken.TokenNahuy, newRefreshToken.TokenNahuy, newRefreshToken.Expiry);
 
         if (affected == 0)
         {

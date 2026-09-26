@@ -34,12 +34,12 @@ public class RefreshTokensRepository(
             .FirstOrDefaultAsync(t => t.TokenNahuy == id);
     }
 
-    public async Task<int> Update(Guid oldRefreshToken, Guid newRefreshToken, CancellationToken ct = default)
-{
-    return await _dbContext.RefreshTokens
-        .Where(t => t.TokenNahuy == oldRefreshToken)
-        .ExecuteUpdateAsync(c => c.SetProperty(
-            t => t.TokenNahuy, newRefreshToken
-        ), ct);
-}
+    public async Task<int> Update(Guid oldRefreshToken, Guid newRefreshToken, DateTime newExpiry, CancellationToken ct = default)
+    {
+        return await _dbContext.RefreshTokens
+            .Where(t => t.TokenNahuy == oldRefreshToken)
+            .ExecuteUpdateAsync(c => c
+                .SetProperty(t => t.TokenNahuy, newRefreshToken)
+                .SetProperty(t => t.Expiry, newExpiry), ct);
+    }
 }
