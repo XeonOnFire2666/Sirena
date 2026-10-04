@@ -8,6 +8,7 @@ public interface IWorkspaceRepository
     Task Add(Workspace item, CancellationToken ct);
     Task Update(Workspace item, CancellationToken ct);
     Task Delete(Guid id, CancellationToken ct);
+    Task UpsertAsync(Workspace incoming, CancellationToken ct);
 }
 
 public interface ITodoItemRepository

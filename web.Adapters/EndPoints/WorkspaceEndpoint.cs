@@ -4,8 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using SirenaAPI.Application.Services;
 using SirenaAPI.Logic.Entities;
+using SirenaAPI.Logic.Exceptions;
+using System.Security.Claims;
 
 namespace SirenaAPI.Adapters.EndPoints;
+
 public record TodoDto(
     Guid Id,
     string Title,
@@ -17,8 +20,26 @@ public record TodoDto(
     DateTime UpdatedAt
 );
 
-public record CreateWorkspaceDto(Guid Id, Guid UserId, string WorkspaceTypeId, string Name, string ColorHex, DateOnly Date, List<TodoDto> Todos, DateTime UpdatedAt);
-public record UpdateWorkspaceDto(Guid Id, Guid UserId, string WorkspaceTypeId, string Name, string ColorHex, DateOnly Date, List<TodoDto> Todos, bool IsDeleted, DateTime UpdatedAt);
+public record CreateWorkspaceDto(
+    Guid Id,
+    Guid UserId,
+    string WorkspaceTypeId,
+    string Name,
+    string ColorHex,
+    DateOnly Date,
+    List<TodoDto> Todos,
+    DateTime UpdatedAt);
+
+public record UpdateWorkspaceDto(
+    Guid Id,
+    Guid UserId,
+    string WorkspaceTypeId,
+    string Name,
+    string ColorHex,
+    DateOnly Date,
+    List<TodoDto> Todos,
+    bool IsDeleted,
+    DateTime UpdatedAt);
 
 public static class WorkspaceEndpoint
 {
@@ -26,6 +47,7 @@ public static class WorkspaceEndpoint
     {
         app.MapGet("/workspace/getall", GetAll).RequireAuthorization();
         app.MapPost("/workspace/create", CreateWorkspace).RequireAuthorization();
+        app.MapPut("/workspace/upsert/{id:guid}", Upsert).RequireAuthorization();
         app.MapPost("/workspace/update", UpdateWorkspace).RequireAuthorization();
         app.MapDelete("/workspace/delete", DeleteWorkspace).RequireAuthorization();
         return app;
@@ -43,11 +65,14 @@ public static class WorkspaceEndpoint
             t.UpdatedAt
         )).ToList();
 
-    private static async Task<IResult> GetAll([FromQuery] Guid userId, WorkspaceService service, CancellationToken ct = default)
+    private static async Task<IResult> GetAll(ClaimsPrincipal user, WorkspaceService service, CancellationToken ct)
     {
+        var userId = GetUserId(user);
+        if (userId is null) return Results.Unauthorized();
+
         try
         {
-            var workspaces = await service.GetAll(userId, ct);
+            var workspaces = await service.GetAll(userId.Value, ct);
             return Results.Ok(workspaces);
         }
         catch (ArgumentException ex)
@@ -55,6 +80,80 @@ public static class WorkspaceEndpoint
             return Results.BadRequest(new { error = ex.Message });
         }
     }
+
+    private static Guid? GetUserId(ClaimsPrincipal user)
+    {
+        var raw = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                  ?? user.FindFirst("sub")?.Value;
+
+        return Guid.TryParse(raw, out var id) ? id : null;
+    }
+
+    private static async Task<IResult> Upsert(
+        Guid id,
+        UpdateWorkspaceDto dto,
+        ClaimsPrincipal user,
+        WorkspaceService service,
+        CancellationToken ct)
+    {
+        if (id != dto.Id)
+            return Results.BadRequest(new { error = "Route id does not match body id" });
+
+        return await SaveAsync(
+            Build(dto.Id, dto.UserId, dto.WorkspaceTypeId, dto.Name, dto.ColorHex, dto.Date,
+                dto.Todos, dto.IsDeleted, dto.UpdatedAt),
+            user, service, ct);
+    }
+
+    private static async Task<IResult> SaveAsync(
+        Workspace workspace,
+        ClaimsPrincipal user,
+        WorkspaceService service,
+        CancellationToken ct)
+    {
+        var requesterId = GetUserId(user);
+        if (requesterId is null) return Results.Unauthorized();
+
+        try
+        {
+            await service.Upsert(workspace, requesterId.Value, ct);
+            return Results.Ok();
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+        }
+        catch (WorkspaceConflictException ex)
+        {
+            return Results.Conflict(new { error = ex.Message });
+        }
+    }
+
+    private static Workspace Build(
+        Guid id,
+        Guid userId,
+        string workspaceTypeId,
+        string name,
+        string colorHex,
+        DateOnly date,
+        List<TodoDto> todos,
+        bool isDeleted,
+        DateTime updatedAt) =>
+        Workspace.Create(
+            id,
+            userId,
+            workspaceTypeId,
+            name,
+            colorHex,
+            date,
+            MapTodos(id, todos),
+            isDeleted,
+            updatedAt);
+
 
     private static async Task<IResult> CreateWorkspace(CreateWorkspaceDto dto, WorkspaceService service, CancellationToken ct = default)
     {

@@ -29,6 +29,21 @@ public class WorkspaceService(IWorkspaceRepository repository, TodoItemService t
         await _repository.Update(entity, ct);
         await _todoService.SyncTodos(entity.Id, entity.Todos, ct);
     }
+    public async Task Upsert(Workspace workspace, Guid requesterId, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(workspace);
+
+        if (workspace.Id == Guid.Empty)
+            throw new ArgumentException("Id is empty");
+
+        if (requesterId == Guid.Empty)
+            throw new UnauthorizedAccessException("Requester is empty");
+
+        if (workspace.UserId != requesterId)
+            throw new UnauthorizedAccessException("Workspace belongs to another user");
+
+        await _repository.UpsertAsync(workspace, ct);
+    }
 
     public async Task Delete(Guid id, CancellationToken ct = default)
     {
