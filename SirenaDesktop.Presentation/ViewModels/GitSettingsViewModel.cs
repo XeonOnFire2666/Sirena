@@ -1,7 +1,7 @@
-using System.IO;
+using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Win32;
 using SirenaDesktop.Application.Contracts;
 
 namespace SirenaDesktop.ViewModels;
@@ -9,6 +9,8 @@ namespace SirenaDesktop.ViewModels;
 public partial class GitSettingsViewModel : ObservableObject
 {
     private readonly IGitSettingsService _gitSettingsService;
+    private readonly IFolderPickerService _folderPicker;
+    private readonly Window _ownerWindow;
 
     [ObservableProperty] private bool _isRepoValid;
 
@@ -18,9 +20,10 @@ public partial class GitSettingsViewModel : ObservableObject
 
     [ObservableProperty] private string? _statusMessage;
 
-    public GitSettingsViewModel(IGitSettingsService gitSettingsService)
+    public GitSettingsViewModel(IGitSettingsService gitSettingsService, IFolderPickerService folderPicker)
     {
         _gitSettingsService = gitSettingsService;
+        _folderPicker = folderPicker;
 
         var savedPath = _gitSettingsService.GetRepoPath();
         if (!string.IsNullOrWhiteSpace(savedPath))
@@ -31,22 +34,13 @@ public partial class GitSettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void BrowseRepo()
+    private async Task BrowseRepo()
     {
-        var dialog = new OpenFolderDialog
-        {
-            Title = "Select Git repository folder",
-            Multiselect = false
-        };
+        var selectedPath = await _folderPicker.PickFolderAsync("Select Git repository folder", RepoPath);
+        if (string.IsNullOrWhiteSpace(selectedPath)) return;
 
-        if (!string.IsNullOrWhiteSpace(RepoPath) && Directory.Exists(RepoPath)) dialog.InitialDirectory = RepoPath;
-
-        if (dialog.ShowDialog() == true)
-        {
-            var selectedPath = dialog.FolderName;
-            RepoPath = selectedPath;
-            ValidateAndApply(selectedPath, true);
-        }
+        RepoPath = selectedPath;
+        ValidateAndApply(selectedPath, true);
     }
 
     [RelayCommand]

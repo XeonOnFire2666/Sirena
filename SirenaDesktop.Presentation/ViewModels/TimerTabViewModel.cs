@@ -1,11 +1,13 @@
-using System.Collections.ObjectModel;
-using System.Globalization;
-using System.Windows.Threading;
+using Avalonia.Controls;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using SirenaDesktop.Application.Contracts;
 using SirenaDesktop.Core.Enums;
 using SirenaDesktop.Core.Models;
 using SirenaDesktop.Services;
+using System.Collections.ObjectModel;
+using System.Globalization;
 
 namespace SirenaDesktop.ViewModels;
 
@@ -18,14 +20,14 @@ public enum TimerRunState
 
 public partial class TimerTabViewModel : TabViewModelBase
 {
-    private const int DefaultWorkMinutes = 25;
-    private const int DefaultBreakMinutes = 5;
     private const int MinDurationSeconds = 30;
     private readonly TimerHistoryService _historyService;
-    private readonly TimerSoundService _soundService;
-
+    private readonly ITimerSoundService _soundService;
+    private readonly TimerSettingsService _settingsService;
+    private readonly TimerSettings _settings;
     private readonly DispatcherTimer _tickTimer;
     private TimerSession? _currentSession;
+
 
     private DateTime? _pausedAt;
 
@@ -43,16 +45,23 @@ public partial class TimerTabViewModel : TabViewModelBase
 
     [ObservableProperty] private TimerRunState runState = TimerRunState.Idle;
 
-    public TimerTabViewModel() : base("Timer", IconType.TimerOutline)
+    [ObservableProperty] private bool isAlarmPlaying;
+
+    public TimerTabViewModel(TimerSettingsService settingsService, TimerHistoryService historyService, ITimerSoundService soundService)
+        : base("Timer", IconType.TimerOutline)
     {
-        _historyService = new TimerHistoryService();
-        _soundService = new TimerSoundService();
+        _historyService = historyService;
+        _soundService = soundService;
+        _settingsService = settingsService;
+        _settings = settingsService.Load();
+
+        ApplySoundSettings();
 
         _tickTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _tickTimer.Tick += OnTick;
 
-        RemainingSeconds = DefaultWorkMinutes * 60;
-        PlannedSeconds = RemainingSeconds;
+        PlannedSeconds = _settings.WorkSeconds;
+        RemainingSeconds = PlannedSeconds;
         CurrentKind = TimerSessionKind.Work;
 
         IsHistoryCollapsed = true;
@@ -63,6 +72,7 @@ public partial class TimerTabViewModel : TabViewModelBase
 
     public bool HasHistory => HistoryGroups.Count > 0;
     public ObservableCollection<TimerHistoryGroup> HistoryGroups { get; } = new();
+    public double HistoryPanelWidth => IsHistoryCollapsed ? 40 : 320;
 
     public bool IsIdle => RunState == TimerRunState.Idle;
     public bool IsRunning => RunState == TimerRunState.Running;
@@ -70,6 +80,26 @@ public partial class TimerTabViewModel : TabViewModelBase
     public bool IsTicking => RunState != TimerRunState.Idle;
 
     public string CurrentKindLabel => CurrentKind == TimerSessionKind.Work ? "Work session" : "Break session";
+
+    public string StatusSubtitle => CurrentKind == TimerSessionKind.Work ? "Work session" : "Break session";
+
+    public void ApplySoundSettings()
+    {
+        _soundService.Volume = _settings.Volume;
+        _soundService.FadeInSeconds = _settings.FadeInSeconds;
+    }
+
+    public void ReloadSettings()
+    {
+        var fresh = _settingsService.Load();
+        _settings.Volume = fresh.Volume;
+        _settings.FadeInSeconds = fresh.FadeInSeconds;
+        _settings.WorkSoundPath = fresh.WorkSoundPath;
+        _settings.BreakSoundPath = fresh.BreakSoundPath;
+        _settings.AutoStartBreak = fresh.AutoStartBreak;
+        _settings.AutoStartWork = fresh.AutoStartWork;
+        ApplySoundSettings();
+    }
 
     partial void OnRunStateChanged(TimerRunState value)
     {
@@ -87,9 +117,25 @@ public partial class TimerTabViewModel : TabViewModelBase
         SubtractOneMinCommand.NotifyCanExecuteChanged();
     }
 
+    partial void OnIsHistoryCollapsedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(HistoryPanelWidth));
+    }
+
     partial void OnCurrentKindChanged(TimerSessionKind value)
     {
         OnPropertyChanged(nameof(CurrentKindLabel));
+        OnPropertyChanged(nameof(StatusSubtitle));
+    }
+
+    partial void OnPlannedSecondsChanged(int value)
+    {
+        if (CurrentKind == TimerSessionKind.Work)
+            _settings.WorkSeconds = value;
+        else
+            _settings.BreakSeconds = value;
+
+        _settingsService.Save(_settings);
     }
 
     private bool CanAdjustDuration()
@@ -132,6 +178,21 @@ public partial class TimerTabViewModel : TabViewModelBase
     {
         IsHistoryCollapsed = !IsHistoryCollapsed;
     }
+
+    [RelayCommand]
+    private void StopAlarm()
+    {
+        _soundService.StopSound();
+        IsAlarmPlaying = false;
+    }
+
+    [RelayCommand]
+    private void OpenSettings()
+    {
+        SettingsRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    public event EventHandler? SettingsRequested;
 
     private void AdjustPlannedDuration(int deltaSeconds)
     {
@@ -178,6 +239,8 @@ public partial class TimerTabViewModel : TabViewModelBase
     [RelayCommand(CanExecute = nameof(CanStart))]
     private void Start()
     {
+        StopAlarmIfPlaying();
+
         if (RunState == TimerRunState.Idle)
         {
             _currentSession = new TimerSession
@@ -234,6 +297,7 @@ public partial class TimerTabViewModel : TabViewModelBase
     private void Reset()
     {
         _tickTimer.Stop();
+        StopAlarmIfPlaying();
 
         if (_currentSession is not null)
         {
@@ -250,7 +314,7 @@ public partial class TimerTabViewModel : TabViewModelBase
         _pausedAt = null;
 
         CurrentKind = TimerSessionKind.Work;
-        PlannedSeconds = DefaultWorkMinutes * 60;
+        PlannedSeconds = _settings.WorkSeconds;
         RemainingSeconds = PlannedSeconds;
         RunState = TimerRunState.Idle;
 
@@ -270,7 +334,10 @@ public partial class TimerTabViewModel : TabViewModelBase
         }
 
         _tickTimer.Stop();
-        _soundService.PlayTimerEndSound();
+
+        var soundPath = CurrentKind == TimerSessionKind.Work ? _settings.WorkSoundPath : _settings.BreakSoundPath;
+        _soundService.PlaySound(soundPath);
+        IsAlarmPlaying = true;
 
         if (_currentSession is not null)
         {
@@ -279,22 +346,33 @@ public partial class TimerTabViewModel : TabViewModelBase
             _historyService.Upsert(_currentSession);
         }
 
-        SwitchToNextPhaseAndAutoStart();
+        var shouldAutoStart = CurrentKind == TimerSessionKind.Work
+            ? _settings.AutoStartBreak
+            : _settings.AutoStartWork;
+
+        SwitchToNextPhase(autoStart: shouldAutoStart);
     }
 
-    private void SwitchToNextPhaseAndAutoStart()
+    private void SwitchToNextPhase(bool autoStart)
     {
         CurrentKind = CurrentKind == TimerSessionKind.Work
             ? TimerSessionKind.Break
             : TimerSessionKind.Work;
 
         PlannedSeconds = CurrentKind == TimerSessionKind.Work
-            ? DefaultWorkMinutes * 60
-            : DefaultBreakMinutes * 60;
+            ? _settings.WorkSeconds
+            : _settings.BreakSeconds;
 
         RemainingSeconds = PlannedSeconds;
         UpdateRemainingText();
         UpdateProgress();
+
+        if (!autoStart)
+        {
+            RunState = TimerRunState.Idle;
+            LoadHistory();
+            return;
+        }
 
         _currentSession = new TimerSession
         {
@@ -308,6 +386,14 @@ public partial class TimerTabViewModel : TabViewModelBase
 
         RunState = TimerRunState.Running;
         _tickTimer.Start();
+    }
+
+    private void StopAlarmIfPlaying()
+    {
+        if (!IsAlarmPlaying) return;
+
+        _soundService.StopSound();
+        IsAlarmPlaying = false;
     }
 
     private void UpdateRemainingText()

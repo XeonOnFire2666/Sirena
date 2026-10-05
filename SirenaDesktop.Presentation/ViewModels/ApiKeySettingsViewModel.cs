@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;     
 using SirenaDesktop.Application.Contracts.Ai;
 using SirenaDesktop.Infrastructure.AI;
 using SirenaDesktop.Services;
@@ -11,20 +12,26 @@ public sealed partial class ApiKeySettingsViewModel : ObservableObject, IDisposa
     private readonly IApiKeyStore _apiKeyStore;
     private readonly IGeminiAiProvider _geminiCaller;
 
-    [ObservableProperty] private string? _apiKeyInput;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSavedKey))]     
+    private string? _apiKeyInput;
 
     private CancellationTokenSource? _debounceCts;
     private bool _disposed;
 
     [ObservableProperty] private bool _isInvalid;
 
-    [ObservableProperty] private bool _isSaved;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSavedKey))]     
+    private bool _isSaved;
 
     private bool _isSyncingFromStore;
 
     [ObservableProperty] private bool _isValidating;
 
     [ObservableProperty] private string? _statusMessage;
+
+    public bool HasSavedKey => IsSaved || _apiKeyStore.HasKey;
 
     public ApiKeySettingsViewModel(IApiKeyStore apiKeyStore, IGeminiAiProvider geminiCaller)
     {
@@ -37,6 +44,26 @@ public sealed partial class ApiKeySettingsViewModel : ObservableObject, IDisposa
         _isSyncingFromStore = false;
 
         _apiKeyStore.ApiKeyChanged += OnApiKeyChangedExternally;
+    }
+
+    [RelayCommand]
+    private void DeleteApiKey()
+    {
+        _debounceCts?.Cancel();
+        _apiKeyStore.DeleteKey();
+        _isSyncingFromStore = true;
+        ApiKeyInput = null;
+        IsSaved = false;
+        IsInvalid = false;
+        StatusMessage = "Key deleted";
+        _isSyncingFromStore = false;
+    }
+
+    [RelayCommand]
+    private async Task SaveApiKeyAsync()
+    {
+        _debounceCts?.Cancel();
+        await DebounceValidateAndSaveAsync(ApiKeyInput, CancellationToken.None).ConfigureAwait(false);
     }
 
     public void Dispose()
@@ -97,7 +124,7 @@ public sealed partial class ApiKeySettingsViewModel : ObservableObject, IDisposa
         }
 
         IsValidating = true;
-        StatusMessage = "Validating key...";
+        StatusMessage = "Checking key...";
 
         ApiKeyValidationResult validation;
         try
@@ -132,13 +159,13 @@ public sealed partial class ApiKeySettingsViewModel : ObservableObject, IDisposa
             case ApiKeyValidationResult.Invalid:
                 IsSaved = false;
                 IsInvalid = true;
-                StatusMessage = "Invalid key";
+                StatusMessage = "Invalid Key";
                 break;
 
             case ApiKeyValidationResult.NetworkError:
                 IsSaved = false;
                 IsInvalid = false;
-                StatusMessage = "Failed to validate key (network error). Please try again.";
+                StatusMessage = "Network error while checking key";
                 break;
         }
     }

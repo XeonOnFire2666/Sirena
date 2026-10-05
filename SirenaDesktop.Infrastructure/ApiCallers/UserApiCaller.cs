@@ -24,7 +24,7 @@ public class UserApiCaller(HttpClient client)
 
             if (responce.StatusCode == HttpStatusCode.Unauthorized)
             {
-                Debug.WriteLine("[Refresh] 401 Unauthorized Ч токен реально отозван сервером");
+                Debug.WriteLine("[Refresh] 401 Unauthorized ");
                 return new TokenResponse();
             }
 

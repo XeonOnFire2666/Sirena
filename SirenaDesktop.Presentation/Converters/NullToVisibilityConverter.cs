@@ -1,22 +1,22 @@
+using System;
 using System.Globalization;
-using System.Windows;
-using System.Windows.Data;
+using Avalonia.Data.Converters;
 
 namespace SirenaDesktop.Presentation.Converters;
 
 public class NullToVisibilityConverter : IValueConverter
 {
+    public static readonly NullToVisibilityConverter Instance = new();
+
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var isNull = value is null;
+        var isNotNull = value is not null;
         var invert = string.Equals(parameter as string, "Invert", StringComparison.OrdinalIgnoreCase);
 
-        if (invert) isNull = !isNull;
-
-        return isNull ? Visibility.Collapsed : Visibility.Visible;
+        return invert ? !isNotNull : isNotNull;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         throw new NotSupportedException();
     }

@@ -44,18 +44,18 @@ public class GoogleAuthExecutor(UserApiCaller api) : IDisposable
             <html>
             <head>
                 <meta charset='utf-8'>
-                <title>Авторизация Sirena</title>
+                <title>Sirena Authorization</title>
                 <script type='text/javascript'>
                     function closeWindow() {
-                        // Обход ограничений браузера на закрытие вкладок, открытых извне
+                        // Bypass browser restrictions on closing externally opened tabs
                         window.open('', '_self', ''); 
                         window.close();
                     }
                 </script>
             </head>
             <body onload='closeWindow()' style='font-family: sans-serif; text-align: center; margin-top: 50px; background-color: #f9f9f9; color: #333;'>
-                <h2>Вход успешно выполнен!</h2>
-                <p>Это окно можно закрыть. Если оно не закрылось автоматически, сделайте это вручную.</p>
+                <h2>Login successful!</h2>
+                <p>You can close this window. If it did not close automatically, please close it manually.</p>
             </body>
             </html>");
 

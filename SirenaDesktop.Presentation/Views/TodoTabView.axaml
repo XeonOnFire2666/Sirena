@@ -1,0 +1,998 @@
+﻿<UserControl x:Class="SirenaDesktop.Views.DayPlanTabView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
+             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:viewModels="clr-namespace:SirenaDesktop.ViewModels"
+             xmlns:models="clr-namespace:SirenaDesktop.Core.Models;assembly=SirenaDesktop.Core"
+             xmlns:converters="clr-namespace:SirenaDesktop.Presentation.Converters"
+             xmlns:behaviors="clr-namespace:SirenaDesktop.Presentation.Behaviors;assembly=SirenaDesktop.Presentation"
+             x:DataType="viewModels:TodoTabViewModel"
+             x:Name="Root">
+
+    <UserControl.Resources>
+        <converters:IconTypeConverter x:Key="IconTypeConverter" />
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+        <converters:WorkspaceHintConverter x:Key="WorkspaceHintConverter" />
+        <converters:TodoTimeRangeConverter x:Key="TodoTimeRangeConverter" />
+
+        <FontFamily x:Key="SourceSerifFont">
+            avares://SirenaDesktop.Presentation/Fonts#Source Serif 4
+        </FontFamily>
+        <FontFamily x:Key="InterFont">
+            avares://SirenaDesktop.Presentation/Fonts#Inter
+        </FontFamily>
+
+        <SolidColorBrush x:Key="SoonBrush" Color="#FF5247" />
+        <SolidColorBrush x:Key="SoonChipBrush" Color="#29FF5247" />
+        <SolidColorBrush x:Key="SoonTintBrush" Color="#14FF5247" />
+        <SolidColorBrush x:Key="ActiveBrush" Color="#FF7A1A" />
+        <SolidColorBrush x:Key="ActiveChipBrush" Color="#29FF7A1A" />
+        <SolidColorBrush x:Key="ActiveTintBrush" Color="#14FF7A1A" />
+        <SolidColorBrush x:Key="NeutralChipBrush" Color="#1F808080" />
+
+        <ControlTheme x:Key="PillButtonTheme" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border x:Name="PART_Bg"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            BoxShadow="0 8 20 -6 #66000000, inset 0 1 0 0 #40FFFFFF">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <DataTemplate x:Key="WeekDayTemplate" DataType="{x:Type models:WeekDayItem}">
+            <Button Classes="dayButton"
+                    Command="{ReflectionBinding #Root.DataContext.SelectDayCommand}"
+                    CommandParameter="{Binding}"
+                    Padding="0" Margin="2,0"
+                    CornerRadius="12"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    Background="Transparent"
+                    BorderThickness="0">
+                <Border Classes="dayPill"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Classes.Selected="{Binding IsSelected}"
+                        Classes.Today="{Binding IsToday}"
+                        CornerRadius="12"
+                        Padding="0,8,0,6">
+                    <StackPanel Orientation="Vertical" Spacing="1" HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="{Binding DayOfWeekShort}"
+                                   Classes="dayName"
+                                   FontSize="11" FontWeight="Medium"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding DayNumber}"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" />
+                        <Ellipse Classes="dot"
+                                 Classes.has="{Binding HasTasks}"
+                                 Width="4" Height="4"
+                                 Margin="0,2,0,0"
+                                 HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+            </Button>
+        </DataTemplate>
+
+        <DataTemplate x:Key="WorkspaceCardTemplate" DataType="{x:Type viewModels:WorkspaceCardItem}">
+            <Panel Classes="card lift tile" Classes.wide="{Binding IsWide}"
+                   behaviors:DragReorder.IsEnabled="True"
+                   behaviors:DragReorder.Group="Workspaces">
+                <!-- Border обёртка: несёт BoxShadow, т.к. у GlassCard нет такого свойства -->
+                <Border Classes="cardShadow" CornerRadius="16">
+                    <suki:GlassCard CornerRadius="16"
+                                    IsInteractive="True"
+                                    Cursor="Hand"
+                                    Padding="0">
+                        <suki:GlassCard.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Delete workspace"
+                                          Command="{ReflectionBinding #Root.DataContext.OpenDeleteWorkspaceDialogCommand}"
+                                          CommandParameter="{Binding}"
+                                          Foreground="{DynamicResource SukiDangerColor}">
+                                    <MenuItem.Icon>
+                                        <mi:MaterialIcon Kind="TrashCanOutline" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </suki:GlassCard.ContextMenu>
+
+                        <Panel>
+                            <Border Background="{Binding AccentSoftBrush}"
+                                    CornerRadius="16"
+                                    IsHitTestVisible="False" />
+
+                            <Button Classes="cardButton"
+                                    CornerRadius="16"
+                                    Command="{ReflectionBinding #Root.DataContext.OpenWorkspaceCommand}"
+                                    CommandParameter="{Binding}">
+                                <Grid Margin="12" ColumnDefinitions="*,Auto">
+                                    <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto,Auto">
+                                        <Border Grid.Row="0"
+                                                Width="28" Height="28"
+                                                CornerRadius="9"
+                                                Background="{Binding AccentBrush}"
+                                                HorizontalAlignment="Left">
+                                            <mi:MaterialIcon Kind="{Binding Icon}"
+                                                             Width="16" Height="16"
+                                                             Foreground="White"
+                                                             HorizontalAlignment="Center"
+                                                             VerticalAlignment="Center" />
+                                        </Border>
+
+                                        <TextBlock Grid.Row="1"
+                                                   Text="{Binding Name}"
+                                                   Classes="serif"
+                                                   FontSize="14" FontWeight="Bold"
+                                                   TextWrapping="Wrap"
+                                                   MaxLines="2"
+                                                   TextAlignment="Left"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Bottom"
+                                                   Margin="0,6,0,6"
+                                                   TextTrimming="CharacterEllipsis" />
+
+                                        <ProgressBar Grid.Row="2"
+                                                     Minimum="0" Maximum="100"
+                                                     Value="{Binding Progress}"
+                                                     Foreground="{Binding AccentBrush}"
+                                                     MinHeight="3" Height="3"
+                                                     ShowProgressText="False"
+                                                     Margin="0,0,0,6" />
+
+                                        <TextBlock Grid.Row="3"
+                                                   Text="{Binding ProgressText}"
+                                                   FontSize="11"
+                                                   Opacity="0.7"
+                                                   HorizontalAlignment="Left" />
+                                    </Grid>
+
+                                    <StackPanel Grid.Column="1"
+                                                Width="130"
+                                                Margin="12,0,0,0"
+                                                Spacing="6"
+                                                VerticalAlignment="Center"
+                                                IsVisible="{Binding IsWide}">
+                                        <TextBlock Text="Nothing planned"
+                                                   FontSize="11" Opacity="0.55"
+                                                   IsVisible="{Binding IsEmpty}" />
+                                        <ItemsControl ItemsSource="{Binding PreviewTitles}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="x:String">
+                                                    <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,5">
+                                                        <Ellipse Width="5" Height="5"
+                                                                 Fill="{DynamicResource SukiPrimaryColor}"
+                                                                 Opacity="0.85"
+                                                                 VerticalAlignment="Center"
+                                                                 Margin="0,0,7,0" />
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding}"
+                                                                   FontSize="11"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Grid>
+                            </Button>
+                        </Panel>
+                    </suki:GlassCard>
+                </Border>
+                <Border Classes="rim" CornerRadius="16" />
+            </Panel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="WorkspaceLegendTemplate" DataType="{x:Type viewModels:WorkspaceCardItem}">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
+                <Ellipse Width="7" Height="7"
+                         Fill="{Binding AccentBrush}"
+                         VerticalAlignment="Center"
+                         Margin="0,0,8,0" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Name}"
+                           FontSize="12"
+                           TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="2"
+                           Text="{Binding ProgressText}"
+                           FontSize="11"
+                           Opacity="0.6"
+                           Margin="10,0,0,0" />
+            </Grid>
+        </DataTemplate>
+
+        <!-- === Compact "Up next" row: checkbox on the left, slim height, no card chrome === -->
+        <DataTemplate x:Key="UrgentTaskTemplate" DataType="{x:Type viewModels:UrgentTaskItem}">
+            <Border CornerRadius="10"
+                    Height="40"
+                    Margin="0,0,0,4"
+                    Classes="urgentRow"
+                    Classes.soon="{Binding IsSoon}"
+                    Classes.active="{Binding IsActive}">
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto" Margin="10,0" VerticalAlignment="Center">
+                    <CheckBox Grid.Column="0"
+                              MinWidth="0"
+                              Padding="0"
+                              Margin="0,0,10,0"
+                              IsChecked="{Binding Task.IsCompleted, Mode=OneWay}"
+                              Command="{ReflectionBinding #Root.DataContext.CompleteUrgentTaskCommand}"
+                              CommandParameter="{Binding}"
+                              ToolTip.Tip="Complete" />
+
+                    <Border Grid.Column="1"
+                            Classes="timeChip"
+                            Classes.soon="{Binding IsSoon}"
+                            Classes.active="{Binding IsActive}"
+                            CornerRadius="8"
+                            Padding="7,3"
+                            Margin="0,0,10,0"
+                            VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Ellipse Classes="live"
+                                     Width="6" Height="6"
+                                     IsVisible="{Binding IsActive}"
+                                     VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding StatusText}"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <Button Grid.Column="2"
+                            Classes="cardButton"
+                            CornerRadius="0"
+                            HorizontalContentAlignment="Left"
+                            Command="{ReflectionBinding #Root.DataContext.OpenEditDialogCommand}"
+                            CommandParameter="{Binding Task}">
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Title}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis" />
+                            <mi:MaterialIcon Kind="{Binding WorkspaceIcon}"
+                                             Width="11" Height="11"
+                                             Opacity="0.55"
+                                             VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding WorkspaceName}"
+                                       FontSize="11" Opacity="0.55"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="WorkspaceTypeCardTemplate" DataType="{x:Type models:WorkspaceType}">
+            <suki:GlassCard Margin="0,0,0,8" CornerRadius="12" IsInteractive="True" ClipToBounds="True" Padding="0">
+                <Button Command="{ReflectionBinding #WorkspaceDialogRoot.DataContext.PickWorkspaceTypeCommand}"
+                        CommandParameter="{Binding}"
+                        Padding="14,11"
+                        HorizontalContentAlignment="Stretch"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand">
+                    <StackPanel Orientation="Horizontal">
+                        <mi:MaterialIcon Kind="{Binding Icon, Converter={StaticResource IconTypeConverter}}"
+                                         Width="22" Height="22"
+                                         Foreground="{DynamicResource SukiPrimaryColor}"
+                                         VerticalAlignment="Center" Margin="0,0,12,0" />
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Title}"
+                                       Classes="serif"
+                                       FontSize="14" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding Description}" FontSize="11" Margin="0,1,0,0"
+                                       Opacity="0.65"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+                </Button>
+            </suki:GlassCard>
+        </DataTemplate>
+
+        <DataTemplate x:Key="TodoItemTemplate" DataType="{x:Type models:TodoItem}">
+            <Panel Classes="card lift tile"
+                   Classes.done="{Binding IsCompleted}"
+                   behaviors:DragReorder.IsEnabled="True"
+                   behaviors:DragReorder.Group="Todos">
+                <!-- Border обёртка: несёт BoxShadow, т.к. у GlassCard нет такого свойства -->
+                <Border Classes="cardShadow" CornerRadius="16">
+                    <suki:GlassCard CornerRadius="16"
+                                    IsInteractive="True"
+                                    Cursor="Hand"
+                                    Padding="0">
+                        <Panel>
+                            <Button Classes="cardButton"
+                                    CornerRadius="16"
+                                    Command="{ReflectionBinding #Root.DataContext.OpenEditDialogCommand}"
+                                    CommandParameter="{Binding}"
+                                    ToolTip.Tip="Edit">
+                                <Grid Margin="14" RowDefinitions="Auto,*,Auto" HorizontalAlignment="Stretch">
+                                    <TextBlock Grid.Row="1"
+                                               Text="{Binding Title}"
+                                               Classes="serif"
+                                               Classes.Completed="{Binding IsCompleted}"
+                                               FontSize="15" FontWeight="Bold"
+                                               TextWrapping="Wrap"
+                                               MaxLines="2"
+                                               TextAlignment="Left"
+                                               HorizontalAlignment="Left"
+                                               VerticalAlignment="Bottom"
+                                               Margin="0,0,0,5"
+                                               TextTrimming="CharacterEllipsis">
+                                        <TextBlock.Styles>
+                                            <Style Selector="TextBlock.Completed">
+                                                <Setter Property="TextDecorations" Value="Strikethrough" />
+                                            </Style>
+                                        </TextBlock.Styles>
+                                    </TextBlock>
+
+                                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left">
+                                        <StackPanel.IsVisible>
+                                            <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                                                <Binding Path="StartTime" Converter="{x:Static ObjectConverters.IsNotNull}" />
+                                                <Binding Path="EndTime" Converter="{x:Static ObjectConverters.IsNotNull}" />
+                                            </MultiBinding>
+                                        </StackPanel.IsVisible>
+                                        <mi:MaterialIcon Kind="ClockOutline" Width="12" Height="12"
+                                                         Foreground="{DynamicResource SukiPrimaryColor}"
+                                                         VerticalAlignment="Center" />
+                                        <TextBlock FontSize="11"
+                                                   Foreground="{DynamicResource SukiPrimaryColor}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="5,0,0,0">
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource TodoTimeRangeConverter}">
+                                                    <Binding Path="StartTime" />
+                                                    <Binding Path="EndTime" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Grid>
+                            </Button>
+
+                            <Grid Margin="16,13,12,0"
+                                  VerticalAlignment="Top"
+                                  ColumnDefinitions="Auto,*,Auto">
+                                <CheckBox Grid.Column="0"
+                                          MinWidth="0"
+                                          Padding="0"
+                                          IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                                          Command="{ReflectionBinding #Root.DataContext.CompleteTaskCommand}"
+                                          CommandParameter="{Binding}" />
+                                <Button Grid.Column="2"
+                                        Classes="Basic"
+                                        Width="28" Height="28"
+                                        CornerRadius="14"
+                                        Padding="0"
+                                        Foreground="{DynamicResource SukiDangerColor}"
+                                        Command="{ReflectionBinding #Root.DataContext.DeleteTaskCommand}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip.Tip="Delete task">
+                                    <mi:MaterialIcon Kind="TrashCanOutline" Width="14" Height="14" />
+                                </Button>
+                            </Grid>
+                        </Panel>
+                    </suki:GlassCard>
+                </Border>
+                <Border Classes="rim" CornerRadius="16" />
+            </Panel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource InterFont}" />
+            <Setter Property="FontStyle" Value="Normal" />
+        </Style>
+        <Style Selector="TextBlock.serif">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+            <Setter Property="FontStyle" Value="Normal" />
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="Opacity" Value="0.6" />
+        </Style>
+
+        <Style Selector="ToolTip">
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+        <Style Selector="ToolTip /template/ Border">
+            <Setter Property="BoxShadow" Value="none" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+        <Style Selector="ToolTip /template/ Border#PART_Border">
+            <Setter Property="BoxShadow" Value="none" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+
+        <Style Selector="Panel.tile">
+            <Setter Property="Width" Value="160" />
+            <Setter Property="Height" Value="142" />
+            <Setter Property="Margin" Value="0,0,10,10" />
+            <!-- Визуальная обратная связь во время перетаскивания: плавный
+                 переход RenderTransform, чтобы пружина не дёргалась рывками. -->
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform"
+                                                   Duration="0:0:0.22"
+                                                   Easing="0.16,1,0.3,1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Panel.tile.wide">
+            <Setter Property="Width" Value="330" />
+        </Style>
+
+        <!-- "Взяли в руку": поднятая карточка поверх остальных, чуть плотнее тень. -->
+        <Style Selector="Panel.tile.dragging">
+            <Setter Property="ZIndex" Value="1000" />
+            <Setter Property="Opacity" Value="0.96" />
+        </Style>
+        <Style Selector="Panel.tile.dragging Border.cardShadow">
+            <Setter Property="BoxShadow" Value="0 18 40 -10 #80000000" />
+        </Style>
+
+        <Style Selector="Button.cardButton">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+                </Transitions>
+            </Setter>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border x:Name="PART_Border"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.cardButton:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.96)" />
+        </Style>
+
+        <Style Selector="Button.addTile">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+                </Transitions>
+            </Setter>
+            <Setter Property="Opacity" Value="0.85" />
+        </Style>
+        <Style Selector="Button.addTile:pointerover">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="Button.addTile:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.96)" />
+        </Style>
+        <Style Selector="Button.addTile Border.addTileTint">
+            <Setter Property="Background" Value="{DynamicResource SukiControlBorderBrush}" />
+            <Setter Property="Opacity" Value="0.08" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.addTile:pointerover Border.addTileTint">
+            <Setter Property="Opacity" Value="0.16" />
+        </Style>
+
+        <Style Selector="Button.fab">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.fab:pointerover">
+            <Setter Property="Opacity" Value="0.92" />
+        </Style>
+        <Style Selector="Button.fab:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.96)" />
+        </Style>
+
+        <Style Selector="Button.dayButton">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter x:Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      Padding="{TemplateBinding Padding}"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
+                                      HorizontalContentAlignment="Stretch"
+                                      VerticalContentAlignment="Stretch" />
+                </ControlTemplate>
+            </Setter>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.dayButton:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.96)" />
+        </Style>
+        <Style Selector="Button.dayButton Border.dayPill">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.dayButton:pointerover Border.dayPill">
+            <Setter Property="Background" Value="{DynamicResource SukiControlBorderBrush}" />
+        </Style>
+        <Style Selector="Button.dayButton Border.dayPill.Today">
+            <Setter Property="BorderBrush" Value="{DynamicResource SukiPrimaryColor}" />
+        </Style>
+        <Style Selector="Button.dayButton Border.dayPill.Selected">
+            <Setter Property="Background" Value="{DynamicResource SukiPrimaryColor}" />
+            <Setter Property="BoxShadow" Value="0 4 12 -3 #66000000, inset 0 1 0 0 #40FFFFFF" />
+        </Style>
+        <Style Selector="Button.dayButton Border.dayPill.Selected TextBlock">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="Button.dayButton Border.dayPill TextBlock.dayName">
+            <Setter Property="Opacity" Value="0.65" />
+        </Style>
+        <Style Selector="Border.dayPill Ellipse.dot">
+            <Setter Property="Fill" Value="{DynamicResource SukiPrimaryColor}" />
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.dayPill Ellipse.dot.has">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="Border.dayPill.Selected Ellipse.dot">
+            <Setter Property="Fill" Value="White" />
+        </Style>
+
+        <Style Selector="Button.navButton">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.navButton:pointerover">
+            <Setter Property="Opacity" Value="0.8" />
+        </Style>
+        <Style Selector="Button.navButton:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.96)" />
+        </Style>
+
+        <!-- Compact "Up next" row backgrounds -->
+        <Style Selector="Border.urgentRow">
+            <Setter Property="Background" Value="{StaticResource NeutralChipBrush}" />
+        </Style>
+        <Style Selector="Border.urgentRow.soon">
+            <Setter Property="Background" Value="{StaticResource SoonTintBrush}" />
+        </Style>
+        <Style Selector="Border.urgentRow.active">
+            <Setter Property="Background" Value="{StaticResource ActiveTintBrush}" />
+        </Style>
+
+        <Style Selector="Border.timeChip">
+            <Setter Property="Background" Value="{StaticResource NeutralChipBrush}" />
+        </Style>
+        <Style Selector="Border.timeChip.soon">
+            <Setter Property="Background" Value="{StaticResource SoonChipBrush}" />
+        </Style>
+        <Style Selector="Border.timeChip.soon TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource SoonBrush}" />
+        </Style>
+        <Style Selector="Border.timeChip.active">
+            <Setter Property="Background" Value="{StaticResource ActiveChipBrush}" />
+        </Style>
+        <Style Selector="Border.timeChip.active TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource ActiveBrush}" />
+        </Style>
+        <Style Selector="Border.timeChip Ellipse.live">
+            <Setter Property="Fill" Value="{StaticResource ActiveBrush}" />
+            <Style.Animations>
+                <Animation Duration="0:0:1.6" IterationCount="Infinite" Easing="0.2,0,0,1">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="1" />
+                    </KeyFrame>
+                    <KeyFrame Cue="60%">
+                        <Setter Property="Opacity" Value="0.35" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <Style Selector="Border.side">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Grid.wide Border.side">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid x:Name="LayoutRoot" Margin="32,40,32,32" ColumnDefinitions="*,Auto" RowDefinitions="*">
+
+        <Grid Grid.Column="0" Grid.Row="0" RowDefinitions="Auto,Auto,*,Auto">
+
+            <Grid Grid.Row="0" Margin="0,0,0,18" ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" IsVisible="{Binding IsWorkspaceOpen}">
+                        <Button Classes="Basic" Width="36" Height="36" Margin="-8,0,4,0"
+                                CornerRadius="18"
+                                Command="{Binding CloseWorkspaceCommand}"
+                                ToolTip.Tip="Back to workspaces">
+                            <mi:MaterialIcon Kind="ArrowLeft" Width="16" Height="16" />
+                        </Button>
+                        <Button Command="{Binding CloseWorkspaceCommand}"
+                                Classes="Basic"
+                                Padding="8,0" HorizontalContentAlignment="Left">
+                            <TextBlock Text="{Binding HeaderTitle}"
+                                       Classes="serif"
+                                       FontSize="24" FontWeight="Bold"
+                                       TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </StackPanel>
+
+                    <TextBlock Text="Day Plan"
+                               Classes="serif"
+                               IsVisible="{Binding IsWorkspaceGridVisible}"
+                               FontSize="24" FontWeight="Bold"
+                               TextTrimming="CharacterEllipsis" />
+
+                    <TextBlock Text="{Binding IsWorkspaceOpen, Converter={StaticResource WorkspaceHintConverter}}"
+                               Margin="0,5,0,0" Opacity="0.65" FontSize="13"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Classes="fab"
+                        Theme="{StaticResource PillButtonTheme}"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Command="{Binding OpenAddDialogCommand}"
+                        IsVisible="{Binding IsWorkspaceOpen}"
+                        Width="42" Height="42"
+                        CornerRadius="21"
+                        Padding="0"
+                        Margin="16,0,0,0"
+                        Background="{DynamicResource SukiPrimaryColor}"
+                        BorderThickness="0">
+                    <mi:MaterialIcon Kind="Plus" Width="18" Height="18" Foreground="White" />
+                </Button>
+            </Grid>
+
+            <Panel Grid.Row="1" x:Name="WeekCard" Classes="card" Margin="0,0,0,18">
+                <suki:GlassCard CornerRadius="16" Padding="5">
+                    <StackPanel>
+                        <Grid ColumnDefinitions="*,Auto" Margin="12,5,2,5">
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding WeekRangeTitle}"
+                                       Classes="serif"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="3">
+                                <Button Classes="Basic navButton"
+                                        Padding="12,0"
+                                        Height="34"
+                                        CornerRadius="17"
+                                        Command="{Binding GoToTodayCommand}"
+                                        IsVisible="{Binding IsTodaySelected, Converter={StaticResource InverseBooleanConverter}}">
+                                    <TextBlock Text="Today" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SukiPrimaryColor}" />
+                                </Button>
+                                <Button Classes="Basic navButton" Width="34" Height="34" CornerRadius="17"
+                                        Command="{Binding PrevWeekCommand}"
+                                        ToolTip.Tip="Previous week">
+                                    <mi:MaterialIcon Kind="ChevronLeft" Width="16" Height="16" />
+                                </Button>
+                                <Button Classes="Basic navButton" Width="34" Height="34" CornerRadius="17"
+                                        Command="{Binding NextWeekCommand}"
+                                        ToolTip.Tip="Next week">
+                                    <mi:MaterialIcon Kind="ChevronRight" Width="16" Height="16" />
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding WeekDays}"
+                                      ItemTemplate="{StaticResource WeekDayTemplate}"
+                                      HorizontalAlignment="Stretch">
+                            <ItemsControl.Styles>
+                                <Style Selector="ItemsControl > ContentPresenter">
+                                    <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                    <Setter Property="VerticalAlignment" Value="Stretch" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ItemsControl.Styles>
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Rows="1" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+                </suki:GlassCard>
+                <Border Classes="rim" CornerRadius="16" />
+            </Panel>
+
+            <Grid Grid.Row="2">
+                <ScrollViewer IsVisible="{Binding IsWorkspaceGridVisible}">
+                    <StackPanel Margin="0,4,0,0">
+                        <TextBlock Text="Workspaces"
+                                   Classes="serif"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Margin="2,0,0,10" />
+
+                        <WrapPanel Orientation="Horizontal">
+                            <ItemsControl ItemsSource="{Binding WorkspaceCards}"
+                                          ItemTemplate="{StaticResource WorkspaceCardTemplate}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+
+                            <Panel Classes="tile">
+                                <Button Classes="cardButton addTile"
+                                        CornerRadius="16"
+                                        Command="{Binding OpenCreateWorkspaceDialogCommand}"
+                                        ToolTip.Tip="Create a new workspace">
+                                    <Panel>
+                                        <Border Classes="addTileTint"
+                                                CornerRadius="16"
+                                                IsHitTestVisible="False" />
+
+                                        <Rectangle RadiusX="16" RadiusY="16"
+                                                   Stroke="{DynamicResource SukiControlBorderBrush}"
+                                                   StrokeThickness="1.5"
+                                                   StrokeDashArray="4,4"
+                                                   IsHitTestVisible="False" />
+
+                                        <StackPanel HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Spacing="10">
+                                            <Border Width="40" Height="40"
+                                                    CornerRadius="13"
+                                                    Background="{DynamicResource SukiPrimaryColor}"
+                                                    HorizontalAlignment="Center"
+                                                    BoxShadow="0 6 16 -4 #33000000">
+                                                <mi:MaterialIcon Kind="Plus"
+                                                                 Width="20" Height="20"
+                                                                 Foreground="White"
+                                                                 HorizontalAlignment="Center"
+                                                                 VerticalAlignment="Center" />
+                                            </Border>
+
+                                            <TextBlock Text="New workspace"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       Opacity="0.75" />
+                                        </StackPanel>
+                                    </Panel>
+                                </Button>
+                            </Panel>
+                        </WrapPanel>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <Grid IsVisible="{Binding IsWorkspaceOpen}" RowDefinitions="*,Auto">
+
+                    <StackPanel Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                IsVisible="{Binding IsTasksEmpty}">
+                        <mi:MaterialIcon Kind="CalendarCheckOutline" Width="48" Height="48"
+                                         Opacity="0.5"
+                                         HorizontalAlignment="Center" Margin="0,0,0,10" />
+                        <TextBlock Text="No tasks yet"
+                                   Classes="serif"
+                                   FontSize="15" FontWeight="Medium"
+                                   Opacity="0.5"
+                                   HorizontalAlignment="Center" />
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="0"
+                                  IsHitTestVisible="{Binding !IsTasksEmpty}">
+                        <StackPanel>
+                            <ItemsControl ItemsSource="{Binding Tasks}" ItemTemplate="{StaticResource TodoItemTemplate}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+
+                            <StackPanel Margin="0,32,0,16" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                        IsVisible="{Binding IsAllTasksCompleted}"
+                                        Classes.Shown="{Binding IsAllTasksCompleted}">
+                                <StackPanel.Styles>
+                                    <Style Selector="StackPanel">
+                                        <Setter Property="Opacity" Value="0" />
+                                        <Setter Property="Transitions">
+                                            <Transitions>
+                                                <DoubleTransition Property="Opacity" Duration="0:0:0.5" Easing="0.2,0,0,1" />
+                                            </Transitions>
+                                        </Setter>
+                                    </Style>
+                                    <Style Selector="StackPanel.Shown">
+                                        <Setter Property="Opacity" Value="1" />
+                                    </Style>
+                                </StackPanel.Styles>
+
+                                <mi:MaterialIcon Kind="Trophy" Width="40" Height="40"
+                                                 Opacity="0.5"
+                                                 HorizontalAlignment="Center" Margin="0,0,0,14" />
+                                <TextBlock Text="You're all caught up"
+                                           Classes="serif"
+                                           FontSize="15"
+                                           Opacity="0.5"
+                                           FontWeight="Medium"
+                                           HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <Expander Grid.Row="1"
+                              Margin="0,14,0,0"
+                              HorizontalAlignment="Stretch"
+                              IsVisible="{Binding HasCompletedTasks}">
+                        <Expander.Header>
+                            <TextBlock Text="Completed"
+                                       Classes="serif"
+                                       Opacity="0.65"
+                                       FontWeight="SemiBold"
+                                       FontSize="13" />
+                        </Expander.Header>
+
+                        <ScrollViewer MaxHeight="320">
+                            <ItemsControl ItemsSource="{Binding CompletedTasks}"
+                                          ItemTemplate="{StaticResource TodoItemTemplate}" Margin="0,6,0,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Expander>
+                </Grid>
+            </Grid>
+
+            <StackPanel Grid.Row="3" Margin="0,6,0,0">
+                <StackPanel.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="IsWorkspaceGridVisible" />
+                        <Binding Path="HasUrgentTasks" />
+                    </MultiBinding>
+                </StackPanel.IsVisible>
+
+                <Grid ColumnDefinitions="Auto,*" Margin="2,0,0,8">
+                    <TextBlock Grid.Column="0"
+                               Text="Up next"
+                               Classes="serif"
+                               FontSize="15" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="1"
+                               Text="in progress or starting within 2 hours"
+                               Classes="label"
+                               Margin="10,0,0,0"
+                               VerticalAlignment="Center" />
+                </Grid>
+
+                <ItemsControl ItemsSource="{Binding UrgentTasks}"
+                              ItemTemplate="{StaticResource UrgentTaskTemplate}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- === FIX: side panel now stretches full height of the row in fullscreen === -->
+        <Border Grid.Column="1"
+                Grid.Row="0"
+                Classes="side"
+                Width="280"
+                Margin="20,0,0,0"
+                VerticalAlignment="Stretch">
+            <Panel Classes="card" VerticalAlignment="Stretch">
+                <suki:GlassCard CornerRadius="16" Padding="18" VerticalAlignment="Stretch" VerticalContentAlignment="Top">
+                    <StackPanel Spacing="14">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="{Binding SelectedDateTitle}"
+                                       Classes="serif"
+                                       FontSize="15" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding DaySubtitle}"
+                                       Classes="label" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="{Binding DayDoneCount}"
+                                           FontSize="30" FontWeight="Bold" />
+                                <TextBlock Text="{Binding DayTotalText}"
+                                           FontSize="14"
+                                           Opacity="0.5"
+                                           VerticalAlignment="Bottom"
+                                           Margin="0,0,0,5" />
+                            </StackPanel>
+                            <ProgressBar Minimum="0" Maximum="100"
+                                         Value="{Binding DayProgress}"
+                                         MinHeight="5" Height="5"
+                                         ShowProgressText="False" />
+                        </StackPanel>
+
+                        <Border Height="1" Opacity="0.5"
+                                Background="{DynamicResource SukiControlBorderBrush}" />
+
+                        <StackPanel Spacing="5" IsVisible="{Binding HasNextTask}">
+                            <TextBlock Text="Next" Classes="label" />
+                            <TextBlock Text="{Binding NextTask.Title}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       TextWrapping="Wrap" MaxLines="2"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding NextTask.StatusText}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SukiPrimaryColor}" />
+                            <Border Height="1" Opacity="0.5" Margin="0,8,0,0"
+                                    Background="{DynamicResource SukiControlBorderBrush}" />
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Text="Workspaces" Classes="label" Margin="0,0,0,8" />
+                            <ItemsControl ItemsSource="{Binding WorkspaceCards}"
+                                          ItemTemplate="{StaticResource WorkspaceLegendTemplate}" />
+                        </StackPanel>
+                    </StackPanel>
+                </suki:GlassCard>
+                <Border Classes="rim" CornerRadius="16" />
+            </Panel>
+        </Border>
+    </Grid>
+</UserControl>

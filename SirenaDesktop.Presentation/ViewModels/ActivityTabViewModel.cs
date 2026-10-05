@@ -1,12 +1,14 @@
-using System.Collections.ObjectModel;
-using System.Globalization;
-using System.Windows;
+using Avalonia.Media;
+using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using SirenaDesktop.Application.Contracts;
 using SirenaDesktop.Core.Enums;
 using SirenaDesktop.Core.Models;
 using SirenaDesktop.Notifications;
 using SirenaDesktop.Services;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Globalization;
 
 namespace SirenaDesktop.ViewModels;
 
@@ -53,7 +55,7 @@ public partial class ActivityTabViewModel : TabViewModelBase
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message);
+            System.Diagnostics.Debug.WriteLine(ex.Message);
         }
         finally
         {
@@ -63,6 +65,13 @@ public partial class ActivityTabViewModel : TabViewModelBase
 
     public async Task UpdateCells()
     {
+        foreach (var n in new[] { "Source Serif 4", "Inter" })
+        {
+            var tf = new Typeface($"avares://SirenaDesktop.Presentation/Fonts#{n}");
+            var ok = FontManager.Current.TryGetGlyphTypeface(tf, out var g);
+            System.Diagnostics.Debug.WriteLine($"{n}: {ok} / {g?.FamilyName}");
+        }
+
         var today = DateTime.Today;
         var startDate = today.AddDays(-(DaysToShow - 1));
 

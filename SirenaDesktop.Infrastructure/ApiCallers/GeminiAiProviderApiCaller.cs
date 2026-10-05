@@ -11,7 +11,7 @@ namespace SirenaDesktop.Infrastructure.AI;
 public class GeminiAiProviderApiCaller : IDisposable, IGeminiAiProvider
 {
     private const string ApiBase = "https://generativelanguage.googleapis.com/v1beta/models";
-    private const string Model = "gemini-3.6-flash";
+    private const string Model = "gemini-3.1-flash-lite";
     private const double NeutralScore = 5.5;
     private const double ScoreRange = 4.5;
     private const double Multiplier = 2.0;
@@ -240,3 +240,5 @@ public class GeminiAiProviderApiCaller : IDisposable, IGeminiAiProvider
         return s.All(c => c < 128);
     }
 }
+
+

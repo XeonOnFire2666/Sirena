@@ -119,12 +119,14 @@ public class WorkspaceRepository(IDbContextFactory<SirenaDbContext> dbContextFac
 
     private static void MergeTodos(SirenaDbContext db, Workspace existing, List<TodoItem> incoming)
     {
-        var incomingById = incoming.ToDictionary(t => t.Id);
         var existingById = existing.Todos.ToDictionary(t => t.Id);
 
         foreach (var todo in incoming)
+        {
             if (existingById.TryGetValue(todo.Id, out var match))
             {
+                if (todo.UpdatedAt < match.UpdatedAt) continue;
+
                 match.Title = todo.Title;
                 match.StartTime = todo.StartTime;
                 match.EndTime = todo.EndTime;
@@ -150,9 +152,7 @@ public class WorkspaceRepository(IDbContextFactory<SirenaDbContext> dbContextFac
 
                 existing.Todos.Add(newTodo);
                 db.Entry(newTodo).State = EntityState.Added;
-            }     
-
-        var toRemove = existing.Todos.Where(t => !incomingById.ContainsKey(t.Id)).ToList();
-        foreach (var stale in toRemove) existing.Todos.Remove(stale);
+            }
+        }
     }
 }

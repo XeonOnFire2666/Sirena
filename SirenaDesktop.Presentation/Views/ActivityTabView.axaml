@@ -1,0 +1,186 @@
+﻿<UserControl x:Class="SirenaDesktop.Views.ActivityTabView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialIcons="using:Material.Icons.Avalonia"
+             xmlns:vm="using:SirenaDesktop.ViewModels"
+             xmlns:converters="using:SirenaDesktop.Presentation.Converters"
+             xmlns:suki="using:SukiUI.Controls"
+             xmlns:behaviors="clr-namespace:SirenaDesktop.Presentation.Behaviors"
+             x:DataType="vm:ActivityTabViewModel"
+             x:Name="Root">
+
+    <UserControl.Resources>
+        <converters:ProductivityToBrushConverter x:Key="ProductivityToBrushConverter" />
+        <converters:WidthToColumnsConverter x:Key="WidthToColumnsConverter" />
+
+        <FontFamily x:Key="SourceSerifFont">
+            avares://SirenaDesktop.Presentation/Fonts#Source Serif 4
+        </FontFamily>
+
+        <FontFamily x:Key="InterFont">
+            avares://SirenaDesktop.Presentation/Fonts#Inter
+        </FontFamily>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource InterFont}" />
+            <Setter Property="FontStyle" Value="Normal" />
+        </Style>
+
+        <Style Selector="TextBlock.serif">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+            <Setter Property="FontStyle" Value="Normal" />
+        </Style>
+
+        <Style Selector="Border.dayCell">
+            <Setter Property="BoxShadow" Value="inset 0 1 0 0 #40FFFFFF, 0 2 6 -2 #66000000" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut" />
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.4" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter>
+            <Setter Property="RenderTransform" Value="scale(1)" />
+        </Style>
+        <Style Selector="Border.dayCell:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.12)" />
+        </Style>
+        <Style Selector="Border.dayCell:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.96)" />
+        </Style>
+
+        <Style Selector="Button">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="Button TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="ToolTip">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="ToolTip TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+
+    </UserControl.Styles>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="32,40,32,32" RowDefinitions="Auto,Auto,Auto">
+
+            <StackPanel Grid.Row="0" HorizontalAlignment="Left" Margin="0,0,0,24">
+                <TextBlock Classes="serif"
+                           Text="Monthly Activity"
+                           FontSize="28" FontWeight="Bold" />
+                <TextBlock Text="Detailed Chart"
+                           FontSize="15"
+                           Margin="0,6,0,0"
+                           Opacity="0.6" />
+            </StackPanel>
+
+            <Panel Grid.Row="1" Classes="card" Margin="0,0,0,24">
+                <suki:GlassCard CornerRadius="18" Padding="20,18,20,20">
+                    <StackPanel>
+                        <TextBlock Classes="serif"
+                                   Text="{Binding MonthRangeText}"
+                                   FontSize="18" FontWeight="Bold"
+                                   Margin="0,0,0,16" />
+
+                        <Border x:Name="BackgroundCard"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Top">
+                            <StackPanel>
+
+                                <Grid Margin="0,0,0,16" ColumnDefinitions="*,*">
+                                    <TextBlock Grid.Column="0" Text="{Binding StartDateText}"
+                                               HorizontalAlignment="Left"
+                                               FontSize="12"
+                                               Opacity="0.6" />
+                                    <TextBlock Grid.Column="1" Text="{Binding EndDateText}"
+                                               HorizontalAlignment="Right"
+                                               FontSize="12"
+                                               Opacity="0.6" />
+                                </Grid>
+
+                                <ItemsControl ItemsSource="{Binding Days}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid
+                                                Columns="{Binding #BackgroundCard.Bounds.Width, Converter={StaticResource WidthToColumnsConverter}}" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Classes="dayCell"
+                                                    Width="32"
+                                                    Height="32"
+                                                    Margin="5"
+                                                    CornerRadius="10"
+                                                    Background="{Binding ProductivityPercent, Converter={StaticResource ProductivityToBrushConverter}}"
+                                                    ToolTip.ShowDelay="100"
+                                                    ToolTip.Tip="{Binding ProductivityPercent, StringFormat='Productivity: {0}%', TargetNullValue='No data for this day'}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </suki:GlassCard>
+                <Border Classes="rim" CornerRadius="18" />
+            </Panel>
+
+            <!-- Margin сверху — запас для translateY(-2px) при hover -->
+            <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="14" Margin="0,4,0,0">
+
+                <Panel Grid.Column="0" Classes="card lift">
+                    <suki:GlassCard CornerRadius="16" Padding="18">
+                        <StackPanel Spacing="14">
+                            <Panel HorizontalAlignment="Left">
+                                <Border Classes="icon-chip" Background="#FF6D00" Opacity="0.18" />
+                                <materialIcons:MaterialIcon Kind="Fire"
+                                                            Width="18" Height="18"
+                                                            Foreground="#FF6D00"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center" />
+                            </Panel>
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="metric-label" Text="Activity Streak &gt;60%" />
+                                <TextBlock Classes="metric"
+                                           Text="{Binding CurrentStreak, StringFormat='{}{0} days'}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </suki:GlassCard>
+                    <Border Classes="rim" CornerRadius="16" />
+                </Panel>
+
+                <Panel Grid.Column="1" Classes="card lift">
+                    <suki:GlassCard CornerRadius="16" Padding="18">
+                        <StackPanel Spacing="14">
+                            <Panel HorizontalAlignment="Left">
+                                <Border Classes="icon-chip" Background="MediumSeaGreen" Opacity="0.18" />
+                                <materialIcons:MaterialIcon Kind="TrendingUp"
+                                                            Width="18" Height="18"
+                                                            Foreground="MediumSeaGreen"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center" />
+                            </Panel>
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="metric-label" Text="Average Productivity" />
+                                <TextBlock Classes="metric"
+                                           Text="{Binding AverageProductivity, StringFormat='{}{0}%'}"
+                                           Foreground="MediumSeaGreen" />
+                            </StackPanel>
+                            <ProgressBar Minimum="0" Maximum="100"
+                                         Height="4" CornerRadius="2"
+                                         Value="{Binding AverageProductivity}"
+                                         Foreground="MediumSeaGreen" />
+                        </StackPanel>
+                    </suki:GlassCard>
+                    <Border Classes="rim" CornerRadius="16" />
+                </Panel>
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,497 @@
+﻿<UserControl x:Class="SirenaDesktop.Views.TimerTabView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:suki="https://github.com/kikipoulet/SukiUI"
+             xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:models="clr-namespace:SirenaDesktop.Core.Models;assembly=SirenaDesktop.Core"
+             xmlns:vm="clr-namespace:SirenaDesktop.ViewModels"
+             xmlns:views="clr-namespace:SirenaDesktop.Views"
+             x:Name="Root"
+             x:DataType="vm:TimerTabViewModel">
+
+    <UserControl.Resources>
+        <views:TimeSpanToMinutesConverter x:Key="TimeSpanToMinutesConverter" />
+
+        <FontFamily x:Key="SourceSerifFont">
+            avares://SirenaDesktop.Presentation/Fonts#Source Serif 4
+        </FontFamily>
+        <FontFamily x:Key="InterFont">
+            avares://SirenaDesktop.Presentation/Fonts#Inter
+        </FontFamily>
+
+        <BoxShadows x:Key="Shadow.Rail">-6 0 24 0 #1A000000</BoxShadows>
+
+        <SolidColorBrush x:Key="Glass.Surface" Color="#14FFFFFF" />
+        <SolidColorBrush x:Key="Glass.SurfaceHover" Color="#20FFFFFF" />
+        <SolidColorBrush x:Key="Glass.Border" Color="#1FFFFFFF" />
+
+        <views:TimerKindToTintConverter x:Key="TimerKindToTintConverter" />
+
+        <!-- === Pill button theme: BoxShadow на Border внутри шаблона, а не на ContentPresenter === -->
+        <ControlTheme x:Key="PillButtonTheme" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border x:Name="PART_Bg"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            BoxShadow="0 8 20 -6 #66000000, inset 0 1 0 0 #40FFFFFF">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
+
+        <ControlTheme x:Key="PillGhostButtonTheme" TargetType="Button" BasedOn="{StaticResource PillButtonTheme}">
+            <Style Selector="^ /template/ Border#PART_Bg">
+                <Setter Property="BoxShadow" Value="inset 0 1 0 0 #1AFFFFFF" />
+            </Style>
+            <Style Selector="^:pointerover /template/ Border#PART_Bg">
+                <Setter Property="Background" Value="{StaticResource Glass.SurfaceHover}" />
+            </Style>
+        </ControlTheme>
+
+        <ControlTheme x:Key="IconGhostButtonTheme" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource Glass.Surface}" />
+            <Setter Property="BorderBrush" Value="{StaticResource Glass.Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border x:Name="PART_Bg"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          HorizontalContentAlignment="Center"
+                                          VerticalContentAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#PART_Bg">
+                <Setter Property="Background" Value="{StaticResource Glass.SurfaceHover}" />
+            </Style>
+            <Style Selector="^:pressed /template/ Border#PART_Bg">
+                <Setter Property="RenderTransform" Value="scale(0.96)" />
+            </Style>
+        </ControlTheme>
+
+        <ControlTheme x:Key="RailButtonTheme" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="Transparent" CornerRadius="20,0,0,20">
+                        <PathIcon x:Name="Chevron"
+                                  Data="M15,4 L7,12 L15,20"
+                                  Width="14" Height="14"
+                                  Foreground="{DynamicResource SukiText}"
+                                  Opacity="0.55"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  Margin="6,0,0,0"
+                                  RenderTransform="translateX(0px)">
+                            <PathIcon.Transitions>
+                                <Transitions>
+                                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut" />
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                                </Transitions>
+                            </PathIcon.Transitions>
+                        </PathIcon>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ PathIcon#Chevron">
+                <Setter Property="RenderTransform" Value="translateX(-3px)" />
+                <Setter Property="Opacity" Value="1" />
+            </Style>
+        </ControlTheme>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource InterFont}" />
+            <Setter Property="FontStyle" Value="Normal" />
+        </Style>
+        <Style Selector="TextBlock.serif">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+            <Setter Property="FontStyle" Value="Normal" />
+        </Style>
+
+        <Style Selector="ToolTip">
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+
+        <Style Selector="ToolTip /template/ Border">
+            <Setter Property="BoxShadow" Value="none" />
+            <Setter Property="CornerRadius" Value="16" />
+        </Style>
+        <Style Selector="ToolTip /template/ Border#PART_Border">
+            <Setter Property="BoxShadow" Value="none" />
+            <Setter Property="CornerRadius" Value="16" />
+        </Style>
+
+        <Style Selector="Border.timelineDot">
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="12" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Background" Value="{DynamicResource SukiCardBackground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SukiPrimaryColor}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="BoxShadow" Value="0 0 0 3 #1FFFFFFF" />
+        </Style>
+
+        <Style Selector="Button.pill">
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Padding" Value="18,10" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="RenderTransform" Value="scale(1)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" Easing="CubicEaseOut" />
+                    <BrushTransition Property="Background" Duration="0:0:0.15" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.pill:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.02)" />
+        </Style>
+        <Style Selector="Button.pill:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.96)" />
+        </Style>
+
+        <Style Selector="Button.pill.primary">
+            <Setter Property="Background" Value="{DynamicResource SukiPrimaryColor}" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+
+        <Style Selector="Button.pill.ghost">
+            <Setter Property="Background" Value="{StaticResource Glass.Surface}" />
+            <Setter Property="BorderBrush" Value="{StaticResource Glass.Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style Selector="Button.pill.stepper">
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+
+        <Style Selector="Button.pill.danger">
+            <Setter Property="Background" Value="{DynamicResource SukiDangerColor}" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+
+        <Style Selector="Button.iconGhost">
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{StaticResource Glass.Surface}" />
+            <Setter Property="BorderBrush" Value="{StaticResource Glass.Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <!-- === Source Serif 4 on buttons / tooltips === -->
+        <Style Selector="Button">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="Button TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="ToolTip TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid x:Name="MainGrid" Background="{DynamicResource AppBackgroundBrush}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Grid.ColumnSpan="2"
+                IsHitTestVisible="False">
+            <Border.Background>
+                <MultiBinding Converter="{StaticResource TimerKindToTintConverter}">
+                    <Binding Path="IsRunning" />
+                    <Binding Path="CurrentKind" />
+                </MultiBinding>
+            </Border.Background>
+            <Border.Transitions>
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.6" Easing="CubicEaseOut" />
+                </Transitions>
+            </Border.Transitions>
+        </Border>
+
+        <Grid Grid.Column="0" Margin="32,40,32,32">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,28">
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Timer"
+                               Classes="serif"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource SukiText}" />
+                    <TextBlock Text="{Binding StatusSubtitle}"
+                               FontSize="15"
+                               Opacity="0.6"
+                               Margin="0,4,0,0" />
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Classes="iconGhost"
+                        Theme="{StaticResource IconGhostButtonTheme}"
+                        Command="{Binding OpenSettingsCommand}"
+                        ToolTip.Tip="Timer settings"
+                        VerticalAlignment="Top">
+                    <icons:MaterialIcon Kind="Cog" Width="18" Height="18" IsHitTestVisible="False" />
+                </Button>
+            </Grid>
+
+            <Panel Grid.Row="1"
+                   Classes="card"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   MaxWidth="440"
+                   Margin="0,0,0,48">
+                <suki:GlassCard CornerRadius="28" Padding="40,36">
+                    <StackPanel HorizontalAlignment="Center" Spacing="4">
+
+                        <TextBlock Text="{Binding RemainingText}"
+                                   Classes="serif"
+                                   FontSize="88"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource SukiText}" />
+
+                        <Border Height="1"
+                                Width="120"
+                                Margin="0,10,0,24"
+                                Background="{DynamicResource SukiControlBorderBrush}" />
+
+                        <Border Width="300"
+                                Height="6"
+                                CornerRadius="3"
+                                ClipToBounds="True"
+                                Background="#1A000000"
+                                Margin="0,0,0,24"
+                                IsVisible="{Binding IsTicking}">
+                            <ProgressBar Value="{Binding Progress, Mode=OneWay}"
+                                         Minimum="0" Maximum="1"
+                                         CornerRadius="3"
+                                         Foreground="{DynamicResource SukiPrimaryColor}"
+                                         Background="Transparent">
+                                <ProgressBar.Transitions>
+                                    <Transitions>
+                                        <DoubleTransition Property="Value" Duration="0:0:0.3" Easing="CubicEaseOut" />
+                                    </Transitions>
+                                </ProgressBar.Transitions>
+                            </ProgressBar>
+                        </Border>
+
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="10"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,0,0,28"
+                                    IsVisible="{Binding IsIdle}">
+                            <Button Content="-1:00"
+                                    Command="{Binding SubtractOneMinCommand}"
+                                    Classes="pill ghost stepper"
+                                    Theme="{StaticResource PillGhostButtonTheme}" />
+                            <Button Content="+1:00"
+                                    Command="{Binding AddOneMinCommand}"
+                                    Classes="pill ghost stepper"
+                                    Theme="{StaticResource PillGhostButtonTheme}" />
+                        </StackPanel>
+
+                        <Button Content="Stop sound"
+                                Command="{Binding StopAlarmCommand}"
+                                Classes="pill danger"
+                                Theme="{StaticResource PillButtonTheme}"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Height="44"
+                                Width="300"
+                                Margin="0,0,0,16"
+                                IsVisible="{Binding IsAlarmPlaying}" />
+
+                        <Panel Width="300">
+                            <Button Content="Start"
+                                    Command="{Binding StartCommand}"
+                                    Classes="pill primary"
+                                    Theme="{StaticResource PillButtonTheme}"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center"
+                                    Height="52"
+                                    IsVisible="{Binding IsIdle}" />
+
+                            <Grid ColumnDefinitions="*,10,*" IsVisible="{Binding IsRunning}">
+                                <Button Grid.Column="0"
+                                        Content="Pause"
+                                        Command="{Binding PauseCommand}"
+                                        Classes="pill primary"
+                                        Theme="{StaticResource PillButtonTheme}"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Height="52" />
+                                <Button Grid.Column="2"
+                                        Content="Reset"
+                                        Command="{Binding ResetCommand}"
+                                        Classes="pill ghost"
+                                        Theme="{StaticResource PillGhostButtonTheme}"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Height="52" />
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,10,*" IsVisible="{Binding IsPaused}">
+                                <Button Grid.Column="0"
+                                        Content="Resume"
+                                        Command="{Binding StartCommand}"
+                                        Classes="pill primary"
+                                        Theme="{StaticResource PillButtonTheme}"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Height="52" />
+                                <Button Grid.Column="2"
+                                        Content="Reset"
+                                        Command="{Binding ResetCommand}"
+                                        Classes="pill ghost"
+                                        Theme="{StaticResource PillGhostButtonTheme}"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Height="52" />
+                            </Grid>
+                        </Panel>
+
+                    </StackPanel>
+                </suki:GlassCard>
+                <Border Classes="rim" CornerRadius="28" />
+            </Panel>
+        </Grid>
+
+        <Border Grid.Column="1"
+            Width="{Binding HistoryPanelWidth}"
+            Background="{StaticResource Glass.Surface}"
+            BorderBrush="#26FFFFFF"
+            BorderThickness="1,0,0,0"
+            CornerRadius="20,0,0,20"
+            BoxShadow="{StaticResource Shadow.Rail}"
+            ClipToBounds="True">
+
+            <Border.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="Width" Duration="0:0:0.16" Easing="CubicEaseOut" />
+                </Transitions>
+            </Border.Transitions>
+
+            <Grid RowDefinitions="Auto,*">
+
+                <Button x:Name="RailButton"
+                        Grid.Row="0" Grid.RowSpan="2"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Command="{Binding ToggleHistoryPanelCommand}"
+                        Theme="{StaticResource RailButtonTheme}"
+                        ToolTip.Tip="Show/hide history" />
+
+                <StackPanel Grid.Row="0"
+                            Margin="44,44,20,16"
+                            IsVisible="{Binding !IsHistoryCollapsed}">
+                    <TextBlock Text="Focus Log"
+                               Classes="serif"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource SukiText}" />
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1"
+                              Margin="44,0,12,32"
+                              IsVisible="{Binding !IsHistoryCollapsed}">
+                    <ItemsControl ItemsSource="{Binding HistoryGroups}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:TimerHistoryGroup">
+                                <StackPanel Margin="0,0,0,20">
+
+                                    <TextBlock Text="{Binding DateLabel}"
+                                               FontSize="12.5"
+                                               FontWeight="Bold"
+                                               Opacity="0.55"
+                                               Margin="2,0,0,12" />
+
+                                    <ItemsControl ItemsSource="{Binding Sessions}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="models:TimerSession">
+                                                <Grid Height="38" ColumnDefinitions="24,*,Auto">
+
+                                                    <Border Grid.Column="0"
+                                                            Width="1.5"
+                                                            Background="{DynamicResource SukiControlBorderBrush}"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Stretch" />
+
+                                                    <Border Grid.Column="0"
+                                                            Classes="timelineDot"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center" />
+
+                                                    <TextBlock Grid.Column="1"
+                                                               VerticalAlignment="Center"
+                                                               Margin="12,0,0,0"
+                                                               FontSize="13"
+                                                               Opacity="0.9">
+                                                        <Run Text="{Binding StartedAt, StringFormat='HH:mm'}" />
+                                                        <Run Text=" – " />
+                                                        <Run Text="{Binding EndedAt, StringFormat='HH:mm', TargetNullValue='…'}" />
+                                                    </TextBlock>
+
+                                                    <TextBlock Grid.Column="2"
+                                                               VerticalAlignment="Center"
+                                                               HorizontalAlignment="Right"
+                                                               FontSize="13"
+                                                               Opacity="0.55"
+                                                               Margin="0,0,6,0"
+                                                               Text="{Binding PlannedDuration, Converter={StaticResource TimeSpanToMinutesConverter}}" />
+
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl> 
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

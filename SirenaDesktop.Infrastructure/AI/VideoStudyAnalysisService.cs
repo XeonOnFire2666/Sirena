@@ -1,7 +1,7 @@
-﻿using System.Diagnostics;
-using SirenaDesktop.Application.Contracts.Ai;
+﻿using SirenaDesktop.Application.Contracts.Ai;
 using SirenaDesktop.Core.Models;
 using SirenaDesktop.Services;
+using System.Diagnostics;
 
 namespace SirenaDesktop.Infrastructure.AI;
 

@@ -1,0 +1,59 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style Selector="Panel.card">
+        <Setter Property="RenderTransform" Value="translateY(0px)" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+                <DoubleTransition Property="Opacity" Duration="0:0:0.25" Easing="0.2,0,0,1" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Panel.card.lift:pointerover">
+        <Setter Property="RenderTransform" Value="translateY(-2px)" />
+        <Setter Property="ZIndex" Value="10" />
+    </Style>
+    <Style Selector="Panel.card.done">
+        <Setter Property="Opacity" Value="0.6" />
+    </Style>
+
+    <Style Selector="Panel.card > Border.rim">
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BoxShadow" Value="0 1 2 0 #26000000, 0 10 24 -8 #4D000000, inset 0 1 0 0 #1AFFFFFF" />
+        <Setter Property="BorderBrush">
+            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Color="#59FFFFFF" Offset="0" />
+                <GradientStop Color="#1AFFFFFF" Offset="0.35" />
+                <GradientStop Color="#0DFFFFFF" Offset="0.65" />
+                <GradientStop Color="#33FFFFFF" Offset="1" />
+            </LinearGradientBrush>
+        </Setter>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.15" Easing="0.2,0,0,1" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Panel.card.lift:pointerover > Border.rim">
+        <Setter Property="BoxShadow" Value="0 2 4 0 #2E000000, 0 16 32 -10 #66000000, inset 0 1 0 0 #26FFFFFF" />
+    </Style>
+
+    <Style Selector="Border.icon-chip">
+        <Setter Property="Width" Value="34" />
+        <Setter Property="Height" Value="34" />
+        <Setter Property="CornerRadius" Value="10" />
+    </Style>
+    <Style Selector="TextBlock.metric">
+        <Setter Property="FontFamily" Value="Inter" />
+        <Setter Property="FontSize" Value="30" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="LetterSpacing" Value="-0.5" />
+    </Style>
+    <Style Selector="TextBlock.metric-label">
+        <Setter Property="FontFamily" Value="Inter" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Opacity" Value="0.6" />
+    </Style>
+</Styles>

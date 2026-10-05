@@ -1,0 +1,75 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:SirenaDesktop.Avalonia"
+             xmlns:materialIcons="using:Material.Icons.Avalonia"
+             xmlns:sukiUi="clr-namespace:SukiUI;assembly=SukiUI"
+             x:Class="SirenaDesktop.App">
+
+    <Application.Resources>
+        <ResourceDictionary>
+
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#f5f1e2"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#1C1C1E" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <FontFamily x:Key="SourceSerifFont">
+                avares://SirenaDesktop.Presentation/Fonts#Source Serif 4
+            </FontFamily>
+
+            <FontFamily x:Key="InterFont">
+                avares://SirenaDesktop.Presentation/Fonts#Inter
+            </FontFamily>
+
+            <ControlTheme x:Key="FlatToolTipTheme" TargetType="ToolTip">
+                <Setter Property="Background" Value="{DynamicResource SukiCardBackground}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource SukiBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Foreground" Value="{DynamicResource SukiText}" />
+                <Setter Property="FontFamily" Value="{DynamicResource InterFont}" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="CornerRadius" Value="16" />
+                <Setter Property="Padding" Value="12,8" />
+                <Setter Property="Template">
+                    <ControlTemplate>
+                        <Border Name="PART_LayoutRoot"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter Name="PART_ContentPresenter"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter>
+            </ControlTheme>
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <Application.Styles>
+        <sukiUi:SukiTheme ThemeColor="Orange" />
+        <materialIcons:MaterialIconStyles />
+
+        <!-- Глобальный слой глубины: Panel.card, Border.rim, TextBlock.metric(-label), Border.icon-chip -->
+        <StyleInclude Source="avares://SirenaDesktop.Presentation/Styles/Depth.axaml" />
+
+        <Style Selector="Window">
+            <Setter Property="FontFamily" Value="{StaticResource InterFont}" />
+        </Style>
+
+        <Style Selector="TextBlock.serif">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+            <Setter Property="FontStyle" Value="Normal" />
+        </Style>
+
+        <Style Selector="ToolTip">
+            <Setter Property="Theme" Value="{StaticResource FlatToolTipTheme}" />
+        </Style>
+    </Application.Styles>
+</Application>

@@ -15,7 +15,7 @@ namespace SirenaDesktop.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
             modelBuilder.Entity("SirenaDesktop.Core.Models.AppTagMap", b =>
                 {
@@ -133,6 +133,35 @@ namespace SirenaDesktop.Migrations
                     b.HasKey("UserId", "DateOnly");
 
                     b.ToTable("StatsExistsFlag");
+                });
+
+            modelBuilder.Entity("SirenaDesktop.Core.Models.SyncOutboxItem", b =>
+                {
+                    b.Property<int>("EntityKind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("NextAttemptAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("EntityKind", "EntityId");
+
+                    b.ToTable("SyncOutbox", (string)null);
                 });
 
             modelBuilder.Entity("SirenaDesktop.Core.Models.TodoItem", b =>

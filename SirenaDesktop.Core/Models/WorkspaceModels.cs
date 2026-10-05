@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using SirenaDesktop.Core.Enums;
-
 namespace SirenaDesktop.Core.Models;
 
 public class WorkspaceType : ObservableObject

@@ -1,6 +1,6 @@
 using System.Diagnostics;
-using System.Windows.Media;
-using System.Windows.Threading;
+using Avalonia.Media;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
@@ -13,9 +13,7 @@ using SirenaDesktop.Core.Enums;
 using SirenaDesktop.Core.Models;
 using SirenaDesktop.Services;
 using SkiaSharp;
-using static System.Windows.Application;
-
-#pragma warning disable CA1416
+using Tmds.DBus.Protocol;
 
 namespace SirenaDesktop.ViewModels;
 
@@ -32,7 +30,8 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
     private readonly IWorkspaceService _workspaceService;
 
 
-    [ObservableProperty] private DrawMarginFrame? _chartFrame = new()
+    [ObservableProperty]
+    private DrawMarginFrame? _chartFrame = new()
     {
         Fill = new SolidColorPaint(new SKColor(0xff, 0xf5, 0xeb))
     };
@@ -87,7 +86,7 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
 
     private int _updateRequestId;
 
-    [ObservableProperty] private string _userName = "Загрузка...";
+    [ObservableProperty] private string _userName = "Loading...";
 
     [ObservableProperty] private string _userPictureUrl = string.Empty;
 
@@ -104,7 +103,7 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
         IWorkspaceService workspaceService,
         ProductivityPercent productivityPercentCalc,
         ILogger<HomeTabViewModel>? logger = null)
-        : base("Домой", IconType.HomeOutline)
+        : base("Home", IconType.HomeOutline)
     {
         _statsService = statsService ?? throw new ArgumentNullException(nameof(statsService));
         _tokenContainer = tokenContainer ?? throw new ArgumentNullException(nameof(tokenContainer));
@@ -134,9 +133,9 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
     {
         get
         {
-            var platformStr = SelectedPlatform == "Windows" ? "на ПК" : "мобильное";
-            if (SelectedDate.Date == DateTime.Today) return $"Статистика {platformStr} за день";
-            return $"Статистика {platformStr} на {SelectedDate:dd.MM.yyyy} не найдена";
+            var platformStr = SelectedPlatform == "Windows" ? "PC" : "mobile";
+            if (SelectedDate.Date == DateTime.Today) return $"{platformStr} statistics for today";
+            return $"{platformStr} statistics for {SelectedDate:dd.MM.yyyy} not found";
         }
     }
 
@@ -146,13 +145,13 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
         {
             if (CurrentTodo != Guid.Empty) return CurrentTodoName;
             if (CurrentWokspace != Guid.Empty) return CurrentWokspaceName;
-            return "Все время";
+            return "All time";
         }
     }
 
     public string ChartTitle => CurrentTodo != Guid.Empty
-        ? $"Активность приложений в задаче \"{CurrentTodoName}\""
-        : "Активность приложений";
+        ? $"App activity in task \"{CurrentTodoName}\""
+        : "App activity";
 
 
     public int TotalUniqueApps => Pr?.Length ?? 0;
@@ -188,7 +187,7 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
         OnPropertyChanged(nameof(EmptyDataMessage));
 
         _ = LoadWorkspacesForDateAsync(value);
-        _ = UpdateTimelineFromDatabaseAsync();
+        _ = RefreshCurrentAsync();
     }
 
     partial void OnSelectedPlatformChanged(string value)
@@ -206,8 +205,14 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
 
         OnPropertyChanged(nameof(EmptyDataMessage));
 
-        _ = UpdateTimelineFromDatabaseAsync();
+        _ = RefreshCurrentAsync();
     }
+
+    private Task RefreshCurrentAsync()
+    {
+        return CurrentTodo != Guid.Empty ? UpdateTodo() : UpdateTimelineFromDatabaseAsync();
+    }
+
 
     [RelayCommand]
     private void PickWorkspaceInPopup(Workspace? workspace)
@@ -292,7 +297,14 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
         OnPropertyChanged(nameof(FilterButtonText));
         OnPropertyChanged(nameof(ChartTitle));
 
-        if (value == Guid.Empty) return;
+        if (value == Guid.Empty)
+        {
+            CurrentTodoName = string.Empty;
+            OnPropertyChanged(nameof(FilterButtonText));
+            OnPropertyChanged(nameof(ChartTitle));
+            _ = UpdateTimelineFromDatabaseAsync();
+            return;
+        }
 
         var todo = TotalTodo.FirstOrDefault(t => t.Id == value);
         if (todo == null) return;
@@ -308,6 +320,10 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
         }
 
         _ = UpdateTodo();
+    }
+    private static DateTime ToLocal(DateTime value)
+    {
+        return value.Kind == DateTimeKind.Utc ? value.ToLocalTime() : value;
     }
 
     private async Task UpdateTimelineFromDatabaseAsync()
@@ -334,7 +350,7 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
 
                 if (needsSync)
                 {
-                    _logger?.LogInformation("Запуск синхронизации...");
+                    _logger?.LogInformation("Starting synchronization...");
                     await SyncWithMobileToday();
                     _lastMobileSyncTime = DateTime.UtcNow;
                 }
@@ -380,7 +396,7 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
 
         if (todayStats?.Tags == null || todayStats.Tags.Count == 0)
         {
-            await Current.Dispatcher.InvokeAsync(ClearStatistics);
+            await Dispatcher.UIThread.InvokeAsync(ClearStatistics);
             return;
         }
 
@@ -389,13 +405,13 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
 
         if (platformStats.Count == 0)
         {
-            await Current.Dispatcher.InvokeAsync(ClearStatistics);
+            await Dispatcher.UIThread.InvokeAsync(ClearStatistics);
             return;
         }
 
         var sortedStats = SortStats(platformStats);
 
-        await Current.Dispatcher.InvokeAsync(() =>
+        await Dispatcher.UIThread.InvokeAsync(() =>
         {
             if (requestId != _updateRequestId) return;
 
@@ -414,33 +430,35 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
     }
 
     private async Task UpdatePeriodStatsAsync(Guid userId, DateTime startTime, DateTime endTime, string platform,
-        int requestId)
+    int requestId)
     {
         var targetDate = DateOnly.FromDateTime(startTime);
-        var todayStats = await _statsService.GetByDate(targetDate, userId);
+        var dayStats = await _statsService.GetByDate(targetDate, userId);
 
         if (requestId != _updateRequestId) return;
 
-        if (todayStats?.Tags == null || todayStats.Tags.Count == 0)
+        if (dayStats?.Tags == null || dayStats.Tags.Count == 0)
         {
-            await Current.Dispatcher.InvokeAsync(ClearStatistics);
+            await Dispatcher.UIThread.InvokeAsync(ClearStatistics);
             return;
         }
 
         var platformKey = platform.ToLower();
-        var platformStats = todayStats.Tags.Where(t => t.Platform?.ToLower() == platformKey).ToList();
+        var periodStats = dayStats.Tags
+            .Where(t => t.Platform?.ToLower() == platformKey)
+            .Where(t => ToLocal(t.DateTime) >= startTime && ToLocal(t.DateTime) <= endTime)
+            .ToList();
 
-        if (platformStats.Count == 0)
+        if (periodStats.Count == 0)
         {
-            await Current.Dispatcher.InvokeAsync(ClearStatistics);
+            _logger?.LogInformation("No tags in period {Start} - {End}", startTime, endTime);
+            await Dispatcher.UIThread.InvokeAsync(ClearStatistics);
             return;
         }
 
-        var periodStats = platformStats.Where(t => t.DateTime >= startTime && t.DateTime <= endTime).ToList();
-
         var sortedStats = SortStats(periodStats);
 
-        await Current.Dispatcher.InvokeAsync(() =>
+        await Dispatcher.UIThread.InvokeAsync(() =>
         {
             if (requestId != _updateRequestId) return;
 
@@ -449,7 +467,7 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
             YAxes = [];
 
             HasData = false;
-            _ = UpdateStatistics(sortedStats);
+            _ = UpdateStatistics(sortedStats, false);
             UpdateChart(sortedStats);
 
             HasData = true;
@@ -457,6 +475,7 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
             OnPropertyChanged(nameof(TotalUniqueApps));
         });
     }
+
 
     private void ClearStatistics()
     {
@@ -474,7 +493,7 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
         OnPropertyChanged(nameof(TotalUniqueApps));
     }
 
-    private async Task UpdateStatistics(List<ActionTag> sortedStats)
+    private async Task UpdateStatistics(List<ActionTag> sortedStats, bool saveProductivity = true)
     {
         var recordedMinutes = 0;
         foreach (var time in sortedStats) recordedMinutes += time.RecordedMinutes;
@@ -497,7 +516,8 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
 
         ProductivityPercent = ProductivityBreakdown.Percent;
 
-        await _statsService.SetProductivityPercent(userId, today, ProductivityPercent);
+        if (saveProductivity)
+            await _statsService.SetProductivityPercent(userId, today, ProductivityPercent);
 
         OnPropertyChanged(nameof(TotalRecordedMinutes));
         OnPropertyChanged(nameof(TotalTrackedTimeStr));
@@ -515,7 +535,21 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
             return;
         }
 
-        var labelsList = sortedStats.Select(s =>
+        var totalMinutes = sortedStats.Sum(s => s.RecordedMinutes);
+
+        var chartStats = totalMinutes > 0
+            ? sortedStats.Where(s => (double)s.RecordedMinutes / totalMinutes >= 0.05).ToList()
+            : sortedStats;
+
+        if (chartStats.Count == 0)
+        {
+            Pr = [];
+            XAxes = [];
+            YAxes = [];
+            return;
+        }
+
+        var labelsList = chartStats.Select(s =>
         {
             var raw = string.IsNullOrEmpty(s.Domain) ? s.AppTitle : s.Domain;
             return TruncateLabel(raw, 12);
@@ -529,7 +563,10 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
             {
                 Labels = labelsList,
                 ShowSeparatorLines = false,
-                LabelsPaint = new SolidColorPaint(new SKColor(0xBF, 0xB2, 0xA8)),
+                LabelsPaint = new SolidColorPaint(new SKColor(0xBF, 0xB2, 0xA8))
+                {
+                    SKTypeface = SKTypeface.FromFamilyName("Infer")
+                },
                 TextSize = 12,
                 MinLimit = -0.5,
                 MaxLimit = labelsList.Length - 0.5
@@ -537,22 +574,25 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
         ];
 
         YAxes =
-        [
-            new Axis
+            [
+                new Axis
             {
-                MinLimit = 0,
-                SeparatorsPaint = new SolidColorPaint(new SKColor(0x4A, 0x40, 0x39)) { StrokeThickness = 0.5f },
-                LabelsPaint = new SolidColorPaint(new SKColor(0xBF, 0xB2, 0xA8)),
-                TextSize = 12
+            MinLimit = 0,
+            SeparatorsPaint = new SolidColorPaint(new SKColor(0x4A, 0x40, 0x39)) { StrokeThickness = 0.5f },
+            LabelsPaint = new SolidColorPaint(new SKColor(0xBF, 0xB2, 0xA8))
+            {
+                SKTypeface = SKTypeface.FromFamilyName("Infer")
+            },
+            TextSize = 12
             }
-        ];
+            ];
 
-        double dynamicWidth = sortedStats.Count <= 5 ? 55 : 16;
-        var newSeries = new ISeries[sortedStats.Count];
+        double dynamicWidth = chartStats.Count <= 5 ? 55 : 16;
+        var newSeries = new ISeries[chartStats.Count];
 
-        for (var i = 0; i < sortedStats.Count; i++)
+        for (var i = 0; i < chartStats.Count; i++)
         {
-            var app = sortedStats[i];
+            var app = chartStats[i];
             var skColor = ToSkColor(app.ColorHex);
 
             newSeries[i] = new StackedColumnSeries<ObservablePoint>
@@ -569,7 +609,7 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
                 Ry = 4
             };
         }
-
+        
         Pr = newSeries;
     }
 
@@ -585,7 +625,7 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
     {
         try
         {
-            var color = (Color)ColorConverter.ConvertFromString(colorHex);
+            var color = Color.Parse(colorHex);
             return new SKColor(color.R, color.G, color.B, color.A);
         }
         catch
@@ -675,15 +715,18 @@ public partial class HomeTabViewModel : TabViewModelBase, IDisposable
 
     private async Task UpdateTodo()
     {
-        var todayDate = DateOnly.FromDateTime(DateTime.Today);
         var userId = _tokenContainer.GetUserId();
+        var selectedTodo = TotalTodo.FirstOrDefault(t => t.Id == CurrentTodo);
+
+        if (selectedTodo?.StartTime == null || selectedTodo.EndTime == null) return;
+
         var currentRequestId = ++_updateRequestId;
-        var selectedPlatform = SelectedPlatform;
-        var currentTodo = CurrentTodo;
 
-
-        var selectedTodo = TotalTodo.FirstOrDefault(t => t.Id == currentTodo);
-        await UpdatePeriodStatsAsync(userId, selectedTodo.StartTime.Value, selectedTodo.EndTime.Value, selectedPlatform,
+        await UpdatePeriodStatsAsync(
+            userId,
+            ToLocal(selectedTodo.StartTime.Value),
+            ToLocal(selectedTodo.EndTime.Value),
+            SelectedPlatform,
             currentRequestId);
     }
 }

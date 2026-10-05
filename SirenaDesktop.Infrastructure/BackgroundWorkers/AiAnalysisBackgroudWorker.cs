@@ -1,55 +1,110 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SirenaDesktop.Infrastructure.AI;
+using SirenaDesktop.Application.Contracts;
+using SirenaDesktop.Application.Contracts.Ai;
+using SirenaDesktop.Application.Contracts.Connect;
 using SirenaDesktop.Services;
 
 namespace SirenaDesktop.Infrastructure.BackgroundWorkers;
 
 public class AiAnalysisBackgroudWorker(
-    LocalAiVideoAnalysis videoAnalysis,
-    DayStatsService statsService,
+    IVideoWatchAccumulator accumulator,
+    IGeminiAiProvider geminiCaller,
+    IApiKeyStore apiKeyStore,
     JwtTokenContainer tokenContainer,
+    ITimerSoundService timerSoundService,
+    IConnectionContainer connectionContainer,
+    int lowQualityScoreThreshold = 5,
+    string? lowQualityAlertSoundPath = null,
     ILogger<AiAnalysisBackgroudWorker>? logger = null) : BackgroundService
 {
-    private const int MinAccumulatedSecondsToAnalyze = 30;
+    private const int MinAccumulatedMinutesToAnalyze = 1;
     private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(1);
     private readonly ILogger<AiAnalysisBackgroudWorker>? _logger = logger;
-    private readonly DayStatsService _statsService = statsService;
     private readonly JwtTokenContainer _tokenContainer = tokenContainer;
-    private readonly LocalAiVideoAnalysis _videoAnalysis = videoAnalysis;
+    private readonly IVideoWatchAccumulator _accumulator = accumulator;
+    private readonly IGeminiAiProvider _geminiCaller = geminiCaller;
+    private readonly IApiKeyStore _apiKeyStore = apiKeyStore;
+    private readonly IConnectionContainer _connectionContainer = connectionContainer;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await Task.Yield();
 
+        _logger?.LogInformation("[AiAnalysisBackgroudWorker] Started");
+
+        using var timer = new PeriodicTimer(PollInterval);
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var userId = _tokenContainer.GetUserId();
-
-                if (userId != Guid.Empty)
+                if (_connectionContainer.GetState())
                 {
-                    var allTime = _videoAnalysis.GetAllTime();
+                    _logger?.LogInformation("[AiAnalysisBackgroudWorker] Offline mode active. Waiting for connection...");
+                    await _connectionContainer.WaitForOnlineAsync(stoppingToken).ConfigureAwait(false);
+                    _logger?.LogInformation("[AiAnalysisBackgroudWorker] Connection restored. Resuming analysis...");
+                }
 
-                    if (allTime >= MinAccumulatedSecondsToAnalyze)
+                var userId = _tokenContainer.GetUserId();
+                var totalMinutesPeek = _accumulator.TotalAccumulatedMinutes();
+
+                _logger?.LogInformation(
+                    "[AiAnalysisBackgroudWorker] Tick. userId={UserId}, hasKey={HasKey}, accumulatedMinutes={Minutes}",
+                    userId, _apiKeyStore.HasKey, totalMinutesPeek);
+
+                if (userId != Guid.Empty && _apiKeyStore.HasKey)
+                {
+                    var totalMinutes = _accumulator.TotalAccumulatedMinutes();
+
+                    if (totalMinutes >= MinAccumulatedMinutesToAnalyze)
                     {
-                        var result = await _videoAnalysis.AnalyzeAndFlushAsync(stoppingToken)
-                            .ConfigureAwait(false);
+                        var snapshot = _accumulator.Drain();
 
-                        Console.WriteLine("");
+                        _logger?.LogInformation(
+                            "[AiAnalysisBackgroudWorker] Drained {Count} videos, calling Gemini",
+                            snapshot.Count);
 
-                        if (result.StudyUnits > 0)
+                        if (snapshot.Count > 0)
                         {
-                            var today = DateOnly.FromDateTime(DateTime.Today);
+                            VideoAnalysisResult result;
+                            try
+                            {
+                                result = await _geminiCaller.AnalyzeAsync(snapshot, stoppingToken)
+                                    .ConfigureAwait(false);
+                            }
+                            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                            {
+                                _logger?.LogInformation(
+                                    "[AiAnalysisBackgroudWorker] Analysis canceled during shutdown, restoring snapshot");
+                                _accumulator.Merge(snapshot);
+                                break;
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger?.LogError(ex, "[AiAnalysisBackgroudWorker] Analysis call failed");
+                                _accumulator.Merge(snapshot);
+                                result = VideoAnalysisResult.Failed;
 
-                            await _statsService.IncrementStudyUnits(
-                                    userId, today, result.StudyUnits, stoppingToken)
-                                .ConfigureAwait(false);
+                                _connectionContainer.SetState(true);
+                            }
 
                             _logger?.LogInformation(
-                                "Study units +{StudyUnits} from {Count} videos",
-                                result.StudyUnits, result.Items.Count);
+                                "[AiAnalysisBackgroudWorker] Gemini result: IsSuccess={IsSuccess}, items={Items}",
+                                result.IsSuccess, result.Items.Count);
+
+                            if (!result.IsSuccess)
+                            {
+                                _accumulator.Merge(snapshot);
+                            }
+                            else if (HasLowQualityContent(result))
+                            {
+                                _logger?.LogInformation(
+                                    "Low quality content detected (threshold {Threshold}). Playing alert sound.",
+                                    lowQualityScoreThreshold);
+
+                                timerSoundService.PlaySound(lowQualityAlertSoundPath);
+                            }
                         }
                     }
                 }
@@ -63,7 +118,28 @@ public class AiAnalysisBackgroudWorker(
                 _logger?.LogError(ex, "[AiAnalysisBackgroudWorker] error");
             }
 
-            await Task.Delay(PollInterval, stoppingToken).ConfigureAwait(false);
+            try
+            {
+                if (!await timer.WaitForNextTickAsync(stoppingToken).ConfigureAwait(false))
+                    break;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
         }
+
+        _logger?.LogInformation("[AiAnalysisBackgroudWorker] Stopped");
+    }
+
+    private bool HasLowQualityContent(VideoAnalysisResult result)
+    {
+        foreach (var item in result.Items)
+        {
+            if (item.Score < lowQualityScoreThreshold)
+                return true;
+        }
+
+        return false;
     }
 }

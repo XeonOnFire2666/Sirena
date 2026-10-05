@@ -12,7 +12,9 @@ public class TokensService(ITokenContainer container)
         if (responseTokens is null || responseTokens.AccessToken is null)
             return new TokensResponce(false, "Bad request");
 
-        _container.AddTokens(responseTokens);
+        var saved = _container.AddTokens(responseTokens);
+        if (!saved)
+            return new TokensResponce(false, "Failed to persist tokens");
 
         return new TokensResponce(true, "Success");
     }

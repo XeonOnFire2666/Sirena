@@ -1,0 +1,169 @@
+﻿<suki:SukiWindow x:Class="SirenaDesktop.MainWindow"
+                 xmlns="https://github.com/avaloniaui"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
+                 xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+                 xmlns:viewModels="clr-namespace:SirenaDesktop.ViewModels"
+                 xmlns:views="clr-namespace:SirenaDesktop.Views"
+                 xmlns:converters="clr-namespace:SirenaDesktop.Presentation.Converters"
+                 mc:Ignorable="d"
+                 Title="Sirena"
+                 SizeToContent="Manual"
+                 WindowStartupLocation="CenterScreen"
+                 Width="800"
+                 Height="800"
+                 MinWidth="666"
+                 MinHeight="444"
+                 IsTitleBarVisible="False"
+                 WindowDecorations="BorderOnly"
+                 x:DataType="viewModels:MainWindowViewModel"
+                 x:CompileBindings="True"
+                 Background="{DynamicResource AppBackgroundBrush}">
+
+    <suki:SukiWindow.Resources>
+        <FontFamily x:Key="SourceSerifFont">
+            avares://SirenaDesktop.Presentation/Fonts#Source Serif 4
+        </FontFamily>
+    </suki:SukiWindow.Resources>
+
+    <Window.Styles>
+        <Style Selector="Button.caption">
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border x:Name="PART_Border"
+                            Background="Transparent"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.caption:pointerover /template/ Border#PART_Border">
+            <Setter Property="Background" Value="{DynamicResource SukiLowBackgroundColor}" />
+        </Style>
+        <Style Selector="Button.caption.close:pointerover /template/ Border#PART_Border">
+            <Setter Property="Background" Value="#E81123" />
+        </Style>
+        <Style Selector="Button.caption.close:pointerover Path">
+            <Setter Property="Stroke" Value="White" />
+        </Style>
+        <Style Selector="Button.caption Path">
+            <Setter Property="Stroke" Value="{DynamicResource SukiText}" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="Width" Value="10" />
+            <Setter Property="Height" Value="10" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+        </Style>
+
+        <Style Selector="Button">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="Button TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="ToolTip">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="ToolTip TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+    </Window.Styles>
+
+    <Window.DataTemplates>
+        <DataTemplate DataType="{x:Type viewModels:SplashViewModel}">
+            <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+                <StackPanel>
+                    <suki:CircleProgressBar IsIndeterminate="True"
+                                            Width="48"
+                                            Height="48"
+                                            Margin="0,0,0,16" />
+
+                    <TextBlock Text="Checking session..."
+                               HorizontalAlignment="Center"
+                               FontFamily="{StaticResource SourceSerifFont}"
+                               Opacity="0.6" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type viewModels:LoginViewModel}">
+            <views:LoginView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type viewModels:MainMenuViewModel}">
+            <views:MainMenuView />
+        </DataTemplate>
+    </Window.DataTemplates>
+
+    <Grid RowDefinitions="Auto,Auto,*">
+        <Grid Grid.Row="0"
+              Height="32"
+              ColumnDefinitions="*,Auto"
+              ZIndex="100">
+            <Border x:Name="DragArea"
+                    Grid.Column="0"
+                    Background="Transparent"
+                    PointerPressed="DragArea_PointerPressed"
+                    DoubleTapped="DragArea_DoubleTapped" />
+
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal">
+                <Button Classes="caption" Click="Minimize_Click">
+                    <Path Data="M0,5 H10" />
+                </Button>
+                <Button Classes="caption" Click="Maximize_Click">
+                    <Path x:Name="MaximizeIcon" Data="M0,0 H10 V10 H0 Z" />
+                </Button>
+                <Button Classes="caption close" Click="Close_Click">
+                    <Path Data="M0,0 L10,10 M10,0 L0,10" />
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="1"
+                IsVisible="{Binding IsConnectionBannerVisible}"
+                Padding="12,6"
+                Background="{Binding IsOffline, Converter={x:Static converters:OfflineToColorConverter.Instance}}">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Spacing="8">
+                <icons:MaterialIcon Kind="WifiOff"
+                                     Width="16"
+                                     Height="16"
+                                     Foreground="White"
+                                     IsVisible="{Binding IsOffline}" />
+                <icons:MaterialIcon Kind="Wifi"
+                                     Width="16"
+                                     Height="16"
+                                     Foreground="White"
+                                     IsVisible="{Binding !IsOffline}" />
+                <TextBlock Text="{Binding IsOffline, Converter={x:Static converters:OfflineToTextConverter.Instance}}"
+                           Foreground="White"
+                           FontFamily="{StaticResource SourceSerifFont}" />
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <TransitioningContentControl Content="{Binding CurrentViewModel}">
+                <TransitioningContentControl.PageTransition>
+                    <CrossFade Duration="0:0:0.3" />
+                </TransitioningContentControl.PageTransition>
+            </TransitioningContentControl>
+
+            <ProgressBar VerticalAlignment="Top"
+                         IsIndeterminate="True"
+                         IsVisible="{Binding IsNavigationLoading}"
+                         Foreground="{DynamicResource SukiPrimaryColor}" />
+        </Grid>
+    </Grid>
+</suki:SukiWindow>

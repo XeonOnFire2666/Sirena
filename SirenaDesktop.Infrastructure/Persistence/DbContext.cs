@@ -1,16 +1,15 @@
-using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using SirenaDesktop.Core.Models;
+using SirenaDesktop.Infrastructure.ExternalServices;
 using SirenaDesktop.Infrastructure.Persistence.Configurations;
+using System.IO;
 
 namespace SirenaDesktop;
 
-public class SirenaDbContext(IConfiguration configuration) : DbContext
+public class SirenaDbContext(DbContextOptions<SirenaDbContext> options) : DbContext(options)
 {
-    private readonly IConfiguration _configuration = configuration;
-
     public DbSet<User> User { get; set; }
     public DbSet<DayStats> DayStats { get; set; }
     public DbSet<PendingChanges> StatsExistsFlag { get; set; }
@@ -19,11 +18,7 @@ public class SirenaDbContext(IConfiguration configuration) : DbContext
     public DbSet<TodoItem> TodoItems { get; set; }
     public DbSet<AppTagMap> AppTagMaps { get; set; }
     public DbSet<PendingChange> PendingChanges { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseSqlite(_configuration.GetConnectionString("MainString"));
-    }
+    public DbSet<SyncOutboxItem> SyncOutbox { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +31,12 @@ public class SirenaDbContext(IConfiguration configuration) : DbContext
         modelBuilder.ApplyConfiguration(new WorkspaceConfiguration());
         modelBuilder.ApplyConfiguration(new TodoItemConfiguration());
         modelBuilder.ApplyConfiguration(new PendingChangesConfiguration());
+
+        modelBuilder.Entity<SyncOutboxItem>(e =>
+        {
+            e.ToTable("SyncOutbox");
+            e.HasKey(x => new { x.EntityKind, x.EntityId });
+        });
 
         modelBuilder.Entity<HydratedUser>().HasKey(c => c.UserId);
     }
@@ -50,6 +51,12 @@ public class SirenaDbContextFactory : IDesignTimeDbContextFactory<SirenaDbContex
             .AddJsonFile("appsettings.json", false)
             .Build();
 
-        return new SirenaDbContext(configuration);
+        var connectionString = AppPaths.BuildConnectionString(configuration.GetConnectionString("MainString"));
+
+        var options = new DbContextOptionsBuilder<SirenaDbContext>()
+            .UseSqlite(connectionString)
+            .Options;
+
+        return new SirenaDbContext(options);
     }
 }

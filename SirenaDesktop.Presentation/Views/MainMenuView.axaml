@@ -1,0 +1,806 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
+             xmlns:sukiTheme="clr-namespace:SukiUI;assembly=SukiUI"
+             xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:converters="clr-namespace:SirenaDesktop.Presentation.Converters"
+             xmlns:viewModels="clr-namespace:SirenaDesktop.ViewModels"
+             xmlns:models="clr-namespace:SirenaDesktop.Core.Models;assembly=SirenaDesktop.Core"
+             xmlns:coreInterfaces="clr-namespace:SirenaDesktop.Core.Interfaces;assembly=SirenaDesktop.Core"
+             xmlns:views="clr-namespace:SirenaDesktop.Views"
+             xmlns:behaviors="clr-namespace:SirenaDesktop.Presentation.Behaviors"
+             x:Class="SirenaDesktop.Views.MainMenuView"
+             x:DataType="viewModels:MainMenuViewModel">
+
+    <UserControl.DataTemplates>
+        <DataTemplate DataType="viewModels:HomeTabViewModel">
+            <views:HomeTabView />
+        </DataTemplate>
+        <DataTemplate DataType="viewModels:ActivityTabViewModel">
+            <views:ActivityTabView />
+        </DataTemplate>
+        <DataTemplate DataType="viewModels:TodoTabViewModel">
+            <views:DayPlanTabView />
+        </DataTemplate>
+        <DataTemplate DataType="viewModels:TimerTabViewModel">
+            <views:TimerTabView />
+        </DataTemplate>
+    </UserControl.DataTemplates>
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+
+                <!-- ============ LIQUID GLASS TOKENS: DARK ============ -->
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="GlassBaseBrush" Color="#D9141312" />
+                    <SolidColorBrush x:Key="GlassCalmBrush" Color="#F0101010" />
+
+                    <LinearGradientBrush x:Key="GlassSheenBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Offset="0" Color="#2EFFFFFF" />
+                        <GradientStop Offset="0.45" Color="#0AFFFFFF" />
+                        <GradientStop Offset="1" Color="#17FFFFFF" />
+                    </LinearGradientBrush>
+
+                    <LinearGradientBrush x:Key="GlassRimBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Offset="0" Color="#80FFFFFF" />
+                        <GradientStop Offset="0.35" Color="#1AFFFFFF" />
+                        <GradientStop Offset="0.65" Color="#0DFFFFFF" />
+                        <GradientStop Offset="1" Color="#4DFFFFFF" />
+                    </LinearGradientBrush>
+
+                    <RadialGradientBrush x:Key="GlassBloomBrush" Center="0%,0%" GradientOrigin="0%,0%" RadiusX="85%" RadiusY="85%">
+                        <GradientStop Offset="0" Color="#2EFFF1E6" />
+                        <GradientStop Offset="1" Color="#00FFF1E6" />
+                    </RadialGradientBrush>
+
+                    <LinearGradientBrush x:Key="GlassSpecularBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+                        <GradientStop Offset="0" Color="#00FFFFFF" />
+                        <GradientStop Offset="0.5" Color="#99FFFFFF" />
+                        <GradientStop Offset="1" Color="#00FFFFFF" />
+                    </LinearGradientBrush>
+
+                    <SolidColorBrush x:Key="GlassItemBrush" Color="#14FFFFFF" />
+                    <SolidColorBrush x:Key="GlassItemHoverBrush" Color="#26FFFFFF" />
+                    <SolidColorBrush x:Key="GlassItemPressedBrush" Color="#33FFFFFF" />
+                    <SolidColorBrush x:Key="GlassItemBorderBrush" Color="#1FFFFFFF" />
+                </ResourceDictionary>
+
+                <!-- ============ LIQUID GLASS TOKENS: LIGHT ============ -->
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="GlassBaseBrush" Color="#CCDDE3EE" />
+                    <SolidColorBrush x:Key="GlassCalmBrush" Color="#F0E6E7E9" />
+
+                    <LinearGradientBrush x:Key="GlassSheenBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Offset="0" Color="#66FFFFFF" />
+                        <GradientStop Offset="0.45" Color="#1FFFFFFF" />
+                        <GradientStop Offset="1" Color="#33FFFFFF" />
+                    </LinearGradientBrush>
+
+                    <LinearGradientBrush x:Key="GlassRimBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Offset="0" Color="#E6FFFFFF" />
+                        <GradientStop Offset="0.4" Color="#1F000000" />
+                        <GradientStop Offset="0.7" Color="#14000000" />
+                        <GradientStop Offset="1" Color="#80FFFFFF" />
+                    </LinearGradientBrush>
+
+                    <RadialGradientBrush x:Key="GlassBloomBrush" Center="0%,0%" GradientOrigin="0%,0%" RadiusX="85%" RadiusY="85%">
+                        <GradientStop Offset="0" Color="#59FFFFFF" />
+                        <GradientStop Offset="1" Color="#00FFFFFF" />
+                    </RadialGradientBrush>
+
+                    <LinearGradientBrush x:Key="GlassSpecularBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+                        <GradientStop Offset="0" Color="#00FFFFFF" />
+                        <GradientStop Offset="0.5" Color="#CCFFFFFF" />
+                        <GradientStop Offset="1" Color="#00FFFFFF" />
+                    </LinearGradientBrush>
+
+                    <SolidColorBrush x:Key="GlassItemBrush" Color="#0F000000" />
+                    <SolidColorBrush x:Key="GlassItemHoverBrush" Color="#1A000000" />
+                    <SolidColorBrush x:Key="GlassItemPressedBrush" Color="#26000000" />
+                    <SolidColorBrush x:Key="GlassItemBorderBrush" Color="#14000000" />
+                </ResourceDictionary>
+
+            </ResourceDictionary.ThemeDictionaries>
+
+            <FontFamily x:Key="SourceSerifFont">
+                avares://SirenaDesktop.Presentation/Fonts#Source Serif 4
+            </FontFamily>
+            <FontFamily x:Key="InterFont">
+                avares://SirenaDesktop.Presentation/Fonts#Inter
+            </FontFamily>
+
+            <converters:SafeImageBitmapConverter x:Key="SafeImageBitmapConverter" />
+            <converters:NullToBoolConverter x:Key="NullToBoolConverter" />
+            <converters:IconKindConverter x:Key="IconKindConverter" />
+            <converters:BoolToGitIconConverter x:Key="BoolToGitIconConverter" />
+            <converters:BoolToGitBrushConverter x:Key="BoolToGitBrushConverter" />
+            <converters:BoolToKeyStatusIconConverter x:Key="BoolToKeyStatusIconConverter" />
+            <converters:KeyStatusTextConverter x:Key="KeyStatusTextConverter" />
+            <converters:ReferenceEqualsMultiConverter x:Key="ReferenceEqualsMultiConverter" />
+
+            <!-- NEW: конвертер тинта таймера (Work → #34E10A00 / Break → #3434C759) -->
+            <views:TimerKindToTintConverter x:Key="TimerKindToTintConverter" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource InterFont}" />
+            <Setter Property="FontStyle" Value="Normal" />
+            <Setter Property="Foreground" Value="{DynamicResource SukiText}" />
+        </Style>
+        <Style Selector="TextBlock.serif">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+            <Setter Property="FontStyle" Value="Normal" />
+        </Style>
+
+        <Style Selector="TextBox">
+            <Setter Property="FontFamily" Value="{StaticResource InterFont}" />
+        </Style>
+
+        <Style Selector="ContentControl.glassDialog">
+            <Setter Property="CornerRadius" Value="20" />
+            <Setter Property="Padding" Value="24" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Panel>
+                        <Border CornerRadius="{TemplateBinding CornerRadius}"
+                                IsHitTestVisible="False"
+                                Background="{DynamicResource GlassBaseBrush}"
+                                BoxShadow="0 28 56 -10 #73000000, 0 12 24 -8 #4D000000, 0 2 4 0 #33000000" />
+
+                        <Border x:Name="PART_Calm"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                IsHitTestVisible="False"
+                                Background="{DynamicResource GlassCalmBrush}">
+                            <Border.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.4" Easing="CubicEaseInOut" />
+                                </Transitions>
+                            </Border.Transitions>
+                        </Border>
+
+                        <Border CornerRadius="{TemplateBinding CornerRadius}"
+                                ClipToBounds="True"
+                                IsHitTestVisible="False">
+                            <Panel>
+                                <Border x:Name="PART_Sheen" Background="{DynamicResource GlassSheenBrush}">
+                                    <Border.Transitions>
+                                        <Transitions>
+                                            <DoubleTransition Property="Opacity" Duration="0:0:0.4" Easing="CubicEaseInOut" />
+                                        </Transitions>
+                                    </Border.Transitions>
+                                </Border>
+                                <Border x:Name="PART_Bloom" Background="{DynamicResource GlassBloomBrush}">
+                                    <Border.Transitions>
+                                        <Transitions>
+                                            <DoubleTransition Property="Opacity" Duration="0:0:0.4" Easing="CubicEaseInOut" />
+                                        </Transitions>
+                                    </Border.Transitions>
+                                </Border>
+                            </Panel>
+                        </Border>
+
+                        <Border x:Name="PART_Rim"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                IsHitTestVisible="False"
+                                BorderThickness="1"
+                                BorderBrush="{DynamicResource GlassRimBrush}">
+                            <Border.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.4" Easing="CubicEaseInOut" />
+                                </Transitions>
+                            </Border.Transitions>
+                        </Border>
+
+                        <Border x:Name="PART_Specular"
+                                Height="1"
+                                Margin="22,1,22,0"
+                                VerticalAlignment="Top"
+                                IsHitTestVisible="False"
+                                Background="{DynamicResource GlassSpecularBrush}">
+                            <Border.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.4" Easing="CubicEaseInOut" />
+                                </Transitions>
+                            </Border.Transitions>
+                        </Border>
+
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          Padding="{TemplateBinding Padding}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Panel>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="ContentControl.glassDialog[IsVisible=True]">
+            <Style.Animations>
+                <Animation Duration="0:0:0.22" Easing="0.2,0,0,1" FillMode="Forward">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0" />
+                        <Setter Property="TranslateTransform.Y" Value="8" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1" />
+                        <Setter Property="TranslateTransform.Y" Value="0" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <Style Selector="ContentControl.glassDialog /template/ Border#PART_Calm">
+            <Setter Property="Opacity" Value="0" />
+        </Style>
+        <Style Selector="ContentControl.glassDialog.calm /template/ Border#PART_Calm">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="ContentControl.glassDialog.calm /template/ Border#PART_Sheen">
+            <Setter Property="Opacity" Value="0.3" />
+        </Style>
+        <Style Selector="ContentControl.glassDialog.calm /template/ Border#PART_Bloom">
+            <Setter Property="Opacity" Value="0" />
+        </Style>
+        <Style Selector="ContentControl.glassDialog.calm /template/ Border#PART_Rim">
+            <Setter Property="Opacity" Value="0.55" />
+        </Style>
+        <Style Selector="ContentControl.glassDialog.calm /template/ Border#PART_Specular">
+            <Setter Property="Opacity" Value="0.2" />
+        </Style>
+
+        <Style Selector="Panel.glassScrim">
+            <Setter Property="Background">
+                <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" RadiusX="75%" RadiusY="75%">
+                    <GradientStop Offset="0" Color="#59000000" />
+                    <GradientStop Offset="1" Color="#99000000" />
+                </RadialGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="Panel.glassScrim[IsVisible=True]">
+            <Style.Animations>
+                <Animation Duration="0:0:0.2" Easing="0.2,0,0,1" FillMode="Forward">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <Style Selector="Grid.dialogOpen">
+            <Setter Property="Effect" Value="blur(10)" />
+        </Style>
+        <Style Selector="Grid.celebrating">
+            <Setter Property="Effect" Value="blur(10)" />
+        </Style>
+
+        <Style Selector="Button.press">
+            <Setter Property="RenderTransform" Value="scale(1)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.press:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.96)" />
+        </Style>
+
+        <Style Selector="Button.workspaceCard">
+            <Setter Property="Background" Value="{DynamicResource GlassItemBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GlassItemBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="RenderTransform" Value="scale(1)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Panel Background="Transparent">
+                        <Border x:Name="PART_Border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                    </Panel>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.workspaceCard /template/ Border#PART_Border">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.workspaceCard:pointerover /template/ Border#PART_Border">
+            <Setter Property="Background" Value="{DynamicResource GlassItemHoverBrush}" />
+        </Style>
+        <Style Selector="Button.workspaceCard:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.96)" />
+        </Style>
+        <Style Selector="Button.workspaceCard:pressed /template/ Border#PART_Border">
+            <Setter Property="Background" Value="{DynamicResource GlassItemPressedBrush}" />
+        </Style>
+
+        <Style Selector="Button.iconGhost">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        </Style>
+        <Style Selector="Button.iconGhost /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="RenderTransform" Value="scale(1)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.iconGhost:pressed /template/ ContentPresenter">
+            <Setter Property="RenderTransform" Value="scale(0.9)" />
+        </Style>
+
+        <Style Selector="Button.navItem">
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="ClickMode" Value="Press" />
+            <Setter Property="ToolTip.ShowDelay" Value="800" />
+            <Setter Property="ToolTip.Placement" Value="Right" />
+            <Setter Property="ToolTip.HorizontalOffset" Value="8" />
+            <Setter Property="ToolTip.VerticalOffset" Value="0" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border x:Name="PART_Border"
+                            Width="{TemplateBinding Width}"
+                            Height="{TemplateBinding Height}"
+                            CornerRadius="10"
+                            Background="Transparent"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          Background="Transparent"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"
+                                          HorizontalContentAlignment="Center"
+                                          VerticalContentAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.navItem:pointerover /template/ Border#PART_Border">
+            <Setter Property="Background" Value="{DynamicResource SukiLowBackgroundColor}" />
+        </Style>
+        <Style Selector="Button.navItem[Tag=True] /template/ Border#PART_Border">
+            <Setter Property="Background" Value="{DynamicResource SukiLowBackgroundColor}" />
+        </Style>
+        <Style Selector="Button.navItem[Tag=True] icons|MaterialIcon">
+            <Setter Property="Foreground" Value="{DynamicResource SukiPrimaryColor}" />
+        </Style>
+
+        <Style Selector="Button.plainIcon">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="ClickMode" Value="Press" />
+            <Setter Property="ToolTip.ShowDelay" Value="800" />
+            <Setter Property="ToolTip.Placement" Value="Right" />
+            <Setter Property="ToolTip.HorizontalOffset" Value="8" />
+            <Setter Property="ToolTip.VerticalOffset" Value="0" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border x:Name="PART_Border"
+                            CornerRadius="10"
+                            Background="Transparent"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          Background="Transparent"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"
+                                          HorizontalContentAlignment="Center"
+                                          VerticalContentAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.plainIcon:pointerover /template/ Border#PART_Border">
+            <Setter Property="Background" Value="{DynamicResource SukiLowBackgroundColor}" />
+        </Style>
+
+        <Style Selector="Button">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="Button TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="ToolTip">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="ToolTip TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Panel Background="{DynamicResource AppBackgroundBrush}">
+
+        <Grid ColumnDefinitions="56,*"
+              Classes.dialogOpen="{Binding ((viewModels:TodoTabViewModel)SelectedTab).IsAnyDialogOpen, FallbackValue=False}"
+              Classes.celebrating="{Binding IsStreakCelebrationVisible}">
+            <Grid.Transitions>
+                <Transitions>
+                    <EffectTransition Property="Effect" Duration="0:0:0.2" Easing="0.2,0,0,1" />
+                </Transitions>
+            </Grid.Transitions>
+
+            <Border Grid.Column="0"
+                    IsHitTestVisible="False"
+                    x:CompileBindings="False">
+                <Border.Background>
+                    <MultiBinding Converter="{StaticResource TimerKindToTintConverter}">
+                        <Binding Path="SelectedTab.IsRunning" FallbackValue="False" />
+                        <Binding Path="SelectedTab.CurrentKind" FallbackValue="Work" />
+                    </MultiBinding>
+                </Border.Background>
+                <Border.Transitions>
+                    <Transitions>
+                        <BrushTransition Property="Background" Duration="0:0:0.6" Easing="CubicEaseOut" />
+                    </Transitions>
+                </Border.Transitions>
+            </Border>
+
+            <suki:GlassCard Grid.Column="0"
+                             CornerRadius="0,14,14,0"
+                             Margin="0"
+                             Padding="6,18,6,12">
+                <Grid RowDefinitions="Auto,*,Auto">
+
+                    <Viewbox Grid.Row="0" Width="26" Height="26" Margin="0,0,0,20">
+                        <icons:MaterialIcon Kind="Wheelchair" Foreground="{DynamicResource SukiPrimaryColor}" />
+                    </Viewbox>
+
+                    <ItemsControl Grid.Row="1"
+                                  ItemsSource="{Binding Tabs}"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Top"
+                                  Button.Click="NavTabs_Click">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="coreInterfaces:ITabViewModel">
+                                <Button Classes="navItem iconGhost"
+                                        Command="{Binding $parent[ItemsControl].((viewModels:MainMenuViewModel)DataContext).SelectTabCommand}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip.Tip="{Binding Title}">
+                                    <Button.Tag>
+                                        <MultiBinding Converter="{StaticResource ReferenceEqualsMultiConverter}">
+                                            <Binding />
+                                            <Binding Path="$parent[ItemsControl].((viewModels:MainMenuViewModel)DataContext).SelectedTab" />
+                                        </MultiBinding>
+                                    </Button.Tag>
+                                    <icons:MaterialIcon Kind="{Binding Icon, Converter={StaticResource IconKindConverter}}"
+                                                        Width="22" Height="22"
+                                                        IsHitTestVisible="False" />
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <StackPanel Grid.Row="2" HorizontalAlignment="Center" Spacing="14">
+                        <Button Classes="navItem iconGhost"
+                                Tag="{Binding IsSettingsDialogOpen}"
+                                Command="{Binding OpenSettingsCommand}"
+                                ToolTip.Tip="Settings">
+                            <icons:MaterialIcon Kind="Cog" Width="22" Height="22" IsHitTestVisible="False" />
+                        </Button>
+
+                        <Button Classes="iconGhost plainIcon"
+                                Width="32" Height="32"
+                                Click="ProfileButton_Click"
+                                ToolTip.Tip="{Binding UserName, FallbackValue='Account'}">
+                            <Panel Width="32" Height="32" IsHitTestVisible="False">
+                                <Border CornerRadius="10" Background="{DynamicResource SukiLowBackgroundColor}">
+                                    <icons:MaterialIcon Kind="AccountCircle" Width="24" Height="24"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"
+                                                         Foreground="{DynamicResource SukiPrimaryColor}" />
+                                </Border>
+                                <Border CornerRadius="10" ClipToBounds="True">
+                                    <Image Source="{Binding UserPictureUrl, Converter={StaticResource SafeImageBitmapConverter}}"
+                                           Stretch="UniformToFill" />
+                                </Border>
+                            </Panel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </suki:GlassCard>
+
+            <Grid Grid.Column="1">
+                <ContentControl Content="{Binding SelectedTab}"
+                                IsVisible="{Binding !IsSettingsDialogOpen}" />
+                <views:SettingsPageView x:Name="SettingsPage"
+                                        IsVisible="{Binding IsSettingsDialogOpen}" />
+            </Grid>
+        </Grid>
+
+        <suki:BusyArea IsBusy="False" IsHitTestVisible="False" />
+
+        <ContentControl Content="{Binding SelectedTab}" ZIndex="40">
+            <ContentControl.DataTemplates>
+                <DataTemplate DataType="viewModels:TodoTabViewModel">
+                    <Panel IsVisible="{Binding IsAnyDialogOpen}">
+                        <Panel Classes="glassScrim" IsVisible="{Binding IsAnyDialogOpen}" />
+
+                        <!-- ===== New workspace: выбор типа / имя ===== -->
+                        <ContentControl Classes="glassDialog" Width="420"
+                                        Classes.calm="{Binding IsNamingWorkspace}"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        IsVisible="{Binding IsWorkspaceDialogOpen}">
+                            <StackPanel>
+
+                                <StackPanel IsVisible="{Binding IsPickingWorkspaceType}">
+                                    <TextBlock Text="New Workspace"
+                                               Classes="serif"
+                                               FontSize="20" FontWeight="Bold" Margin="0,0,0,4" />
+                                    <TextBlock Text="Choose a workspace type for today"
+                                               Opacity="0.7"
+                                               Margin="0,0,0,20" />
+
+                                    <ItemsControl ItemsSource="{Binding AvailableWorkspaceTypes}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="models:WorkspaceType">
+                                                <Button Classes="workspaceCard"
+                                                        Margin="0,0,0,10"
+                                                        Padding="16,14"
+                                                        CornerRadius="10"
+                                                        HorizontalAlignment="Stretch"
+                                                        HorizontalContentAlignment="Left"
+                                                        Command="{Binding $parent[ItemsControl].((viewModels:TodoTabViewModel)DataContext).PickWorkspaceTypeCommand}"
+                                                        CommandParameter="{Binding}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="14" IsHitTestVisible="False">
+                                                        <icons:MaterialIcon Kind="{Binding Icon, Converter={StaticResource IconKindConverter}}"
+                                                                             Width="28" Height="28"
+                                                                             Foreground="{DynamicResource SukiPrimaryColor}"
+                                                                             VerticalAlignment="Center" />
+                                                        <StackPanel VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Title}"
+                                                                       Classes="serif"
+                                                                       FontSize="15" FontWeight="SemiBold" />
+                                                            <TextBlock Text="{Binding Description}" FontSize="12" Opacity="0.7"
+                                                                       Margin="0,2,0,0" TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <Button Classes="press"
+                                            Content="Cancel"
+                                            Background="Transparent"
+                                            CornerRadius="10"
+                                            Command="{Binding CancelWorkspaceDialogCommand}"
+                                            HorizontalAlignment="Right"
+                                            Margin="0,8,0,0" />
+                                </StackPanel>
+
+                                <StackPanel IsVisible="{Binding IsNamingWorkspace}">
+                                    <TextBlock Text="Workspace Name"
+                                               Classes="serif"
+                                               FontSize="20" FontWeight="Bold" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding PendingWorkspaceType.Title, StringFormat='Type: {0}'}"
+                                               Opacity="0.7"
+                                               Margin="0,0,0,20" />
+
+                                    <TextBox Text="{Binding NewWorkspaceNameInput, Mode=TwoWay}"
+                                             Watermark="Name"
+                                             CornerRadius="10"
+                                             MaxLength="60" />
+
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                                Margin="0,20,0,0" Spacing="8">
+                                        <Button Classes="press"
+                                                Content="Back"
+                                                Background="Transparent"
+                                                CornerRadius="10"
+                                                Command="{Binding BackToTypePickerCommand}" />
+                                        <Button Classes="press"
+                                                Content="Create"
+                                                CornerRadius="10"
+                                                Background="{DynamicResource SukiPrimaryColor}"
+                                                Foreground="White"
+                                                Command="{Binding ConfirmCreateWorkspaceCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                            </StackPanel>
+                        </ContentControl>
+
+                        <!-- ===== Delete workspace ===== -->
+                        <ContentControl Classes="glassDialog" Width="350"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        IsVisible="{Binding IsDeleteWorkspaceDialogOpen}">
+                            <StackPanel>
+                                <TextBlock Text="Delete workspace?"
+                                           Classes="serif"
+                                           FontSize="20" FontWeight="Bold" Margin="0,0,0,8" />
+                                <TextBlock Text="Are you sure you want to delete this workspace? All tasks inside will be permanently deleted."
+                                           TextWrapping="Wrap"
+                                           Opacity="0.7"
+                                           Margin="0,0,0,24" />
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                                    <Button Classes="press"
+                                            Content="Cancel"
+                                            Background="Transparent"
+                                            CornerRadius="10"
+                                            Command="{Binding CancelDeleteWorkspaceDialogCommand}" />
+                                    <Button Classes="press"
+                                            Content="Delete"
+                                            CornerRadius="10"
+                                            Background="{DynamicResource SukiDangerColor}"
+                                            Foreground="White"
+                                            Command="{Binding ConfirmDeleteWorkspaceCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ContentControl>
+
+                        <!-- ===== Task dialog ===== -->
+                        <ContentControl Classes="glassDialog calm" Width="400"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        IsVisible="{Binding IsDialogOpen}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding DialogTitle}"
+                                           Classes="serif"
+                                           FontSize="20" FontWeight="Bold" Margin="0,0,0,20" />
+                                <TextBox Text="{Binding TaskTitleInput, Mode=TwoWay}"
+                                         Watermark="What needs to be done?"
+                                         CornerRadius="10"
+                                         MaxLength="100"
+                                         Margin="0,0,0,20" />
+
+                                <Grid ColumnDefinitions="*,12,*" Margin="0,0,0,20">
+                                    <StackPanel Grid.Column="0" Spacing="6">
+                                        <TextBlock Text="Start" FontSize="12" Opacity="0.7" />
+                                        <TimePicker SelectedTime="{Binding TaskStartTimeInput, Mode=TwoWay}"
+                                                    ClockIdentifier="24HourClock"
+                                                    MinuteIncrement="5"
+                                                    MinWidth="0"
+                                                    HorizontalAlignment="Stretch"
+                                                    CornerRadius="10" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2" Spacing="6">
+                                        <TextBlock Text="End" FontSize="12" Opacity="0.7" />
+                                        <TimePicker SelectedTime="{Binding TaskEndTimeInput, Mode=TwoWay}"
+                                                    ClockIdentifier="24HourClock"
+                                                    MinuteIncrement="5"
+                                                    MinWidth="0"
+                                                    HorizontalAlignment="Stretch"
+                                                    CornerRadius="10" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                            Margin="0,8,0,0" Spacing="12">
+                                    <Button Classes="press"
+                                            Content="Cancel"
+                                            Background="Transparent"
+                                            Foreground="{DynamicResource SukiPrimaryColor}"
+                                            CornerRadius="10"
+                                            Command="{Binding CancelDialogCommand}" />
+                                    <Button Classes="press"
+                                            Content="Save"
+                                            CornerRadius="10"
+                                            Background="{DynamicResource SukiPrimaryColor}"
+                                            Foreground="White"
+                                            Command="{Binding SaveTaskCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ContentControl>
+                    </Panel>
+                </DataTemplate>
+
+                <DataTemplate DataType="coreInterfaces:ITabViewModel">
+                    <Panel />
+                </DataTemplate>
+            </ContentControl.DataTemplates>
+        </ContentControl>
+
+        <!-- ===== Streak celebration ===== -->
+        <Panel x:Name="StreakOverlay"
+               Classes="glassScrim"
+               IsVisible="{Binding IsStreakCelebrationVisible}"
+               PointerPressed="StreakOverlay_PointerPressed"
+               ZIndex="60">
+
+            <ContentControl Classes="glassDialog"
+                            Width="320" Height="320"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            IsVisible="{Binding IsStreakCelebrationVisible}">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+
+                    <Panel Width="88" Height="88" Margin="0,0,0,16">
+                        <Ellipse Width="150" Height="150"
+                                 IsHitTestVisible="False">
+                            <Ellipse.Fill>
+                                <RadialGradientBrush>
+                                    <GradientStop Offset="0" Color="#4DFF6D00" />
+                                    <GradientStop Offset="1" Color="#00FF6D00" />
+                                </RadialGradientBrush>
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <Viewbox Width="88" Height="88">
+                            <icons:MaterialIcon Kind="Fire"
+                                                Foreground="#FF6D00"
+                                                RenderTransformOrigin="0.5,0.5">
+                                <icons:MaterialIcon.Styles>
+                                    <Style Selector="icons|MaterialIcon">
+                                        <Style.Animations>
+                                            <Animation Duration="0:0:1" IterationCount="Infinite">
+                                                <KeyFrame Cue="0%">
+                                                    <Setter Property="ScaleTransform.ScaleX" Value="1" />
+                                                    <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                                                </KeyFrame>
+                                                <KeyFrame Cue="50%">
+                                                    <Setter Property="ScaleTransform.ScaleX" Value="1.15" />
+                                                    <Setter Property="ScaleTransform.ScaleY" Value="1.15" />
+                                                </KeyFrame>
+                                                <KeyFrame Cue="100%">
+                                                    <Setter Property="ScaleTransform.ScaleX" Value="1" />
+                                                    <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                                                </KeyFrame>
+                                            </Animation>
+                                        </Style.Animations>
+                                    </Style>
+                                </icons:MaterialIcon.Styles>
+                            </icons:MaterialIcon>
+                        </Viewbox>
+                    </Panel>
+
+                    <TextBlock Text="Streak Extended!"
+                               Classes="serif"
+                               FontSize="20" FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,4" />
+
+                    <TextBlock Text="{Binding CelebratedStreak, StringFormat='{}{0} days in a row 🔥'}"
+                               Opacity="0.7"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,20" />
+
+                    <Button Classes="press"
+                            Content="Great!"
+                            CornerRadius="10"
+                            Background="{DynamicResource SukiPrimaryColor}"
+                            Foreground="White"
+                            Command="{Binding CloseStreakCelebrationCommand}"
+                            HorizontalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            Width="140" />
+                </StackPanel>
+            </ContentControl>
+        </Panel>
+    </Panel>
+</UserControl>

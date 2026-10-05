@@ -42,5 +42,5 @@ public class TimerSession
         }
     }
 
-    public string KindLabel => Kind == TimerSessionKind.Work ? "Работа" : "Отдых";
+    public string KindLabel => Kind == TimerSessionKind.Work ? "Work session" : "Break session";
 }

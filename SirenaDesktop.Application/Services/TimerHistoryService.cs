@@ -3,10 +3,6 @@ using SirenaDesktop.Core.Models;
 
 namespace SirenaDesktop.Services;
 
-/// <summary>
-///     Хранит историю запусков таймера (по дням) в JSON-файле в %AppData%/SirenaDesktop.
-///     Файл/папка создаются автоматически, если отсутствуют.
-/// </summary>
 public class TimerHistoryService
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -26,7 +22,6 @@ public class TimerHistoryService
         _filePath = Path.Combine(_folderPath, "timer_history.json");
     }
 
-    /// <summary>Все сохранённые сессии, независимо от даты.</summary>
     public List<TimerSession> LoadAll()
     {
         try
@@ -43,12 +38,10 @@ public class TimerHistoryService
         }
         catch
         {
-            // Повреждённый файл истории не должен ронять приложение.
             return new List<TimerSession>();
         }
     }
 
-    /// <summary>Сессии за сегодняшний день (по StartedAt), отсортированные по времени начала.</summary>
     public List<TimerSession> LoadToday()
     {
         var today = DateTime.Today;
@@ -68,11 +61,9 @@ public class TimerHistoryService
         }
         catch
         {
-            // Ошибки записи истории не должны прерывать работу таймера.
         }
     }
 
-    /// <summary>Добавляет новую сессию или обновляет существующую (по Id) и сохраняет файл.</summary>
     public void Upsert(TimerSession session)
     {
         var all = LoadAll();

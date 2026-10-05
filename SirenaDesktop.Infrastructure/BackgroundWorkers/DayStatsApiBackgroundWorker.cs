@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SirenaDesktop.ApiCallers;
 using SirenaDesktop.Application.Contracts;
+using SirenaDesktop.Application.Contracts.Connect;
 using SirenaDesktop.Core.Models;
 using SirenaDesktop.Infrastructure.Services;
 using SirenaDesktop.Services;
@@ -14,12 +15,14 @@ public class DayStatsApiBackgroundWorker(
     IServiceScopeFactory scopeFactory,
     JwtTokenContainer tokenContainer,
     TokenRefreshService refreshService,
-    StatsExistsFlagService flagService) : BackgroundService
+    StatsExistsFlagService flagService,
+    IConnectionContainer connectionContainer) : BackgroundService
 {
     private readonly IAuthSignalService _authSignal = authSignal;
     private readonly StatsExistsFlagService _flagService = flagService;
     private readonly TokenRefreshService _refreshService = refreshService;
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly IConnectionContainer _connectionContainer = connectionContainer;
 
     private readonly Dictionary<(Guid UserId, DateOnly Day), Dictionary<Guid, int>> _syncedTagMinutes = [];
     private readonly JwtTokenContainer _tokenContainer = tokenContainer;
@@ -33,111 +36,147 @@ public class DayStatsApiBackgroundWorker(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await Task.Yield();
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            var userId = _tokenContainer.GetUserId();
-            Debug.WriteLine($"------[Worker] Tick. userId={userId}, lastUserId={_lastUserId}, isSync={_isSync}");
-
-            if (userId == Guid.Empty || userId != _lastUserId)
+            while (!stoppingToken.IsCancellationRequested)
             {
-                _isSync = false;
-                if (userId == Guid.Empty)
+                if (_connectionContainer.GetState())
                 {
-                    Debug.WriteLine("------[Worker] userId empty, waiting for login");
-                    _lastUserId = null;
-                    await _authSignal.WaitForLoginAsync(stoppingToken).ConfigureAwait(false);
-                    continue;
+                    Debug.WriteLine("------[Worker] Offline mode active. Waiting for connection...");
+                    await _connectionContainer.WaitForOnlineAsync(stoppingToken).ConfigureAwait(false);
+                    Debug.WriteLine("------[Worker] Connection restored! Resuming sync...");
                 }
 
-                _lastUserId = userId;
-            }
+                var userId = _tokenContainer.GetUserId();
+                Debug.WriteLine($"------[Worker] Tick. userId={userId}, lastUserId={_lastUserId}, isSync={_isSync}");
 
-            var todayDate = DateOnly.FromDateTime(DateTime.Today);
-            using (var scope = _scopeFactory.CreateScope())
-            {
-                if (!_isSync)
+                if (userId == Guid.Empty || userId != _lastUserId)
                 {
-                    var hydrationService = scope.ServiceProvider.GetRequiredService<DataSyncService>();
-                    var syncOk = await SyncWithRetryAsync(hydrationService, stoppingToken);
-
-                    if (!syncOk)
+                    _isSync = false;
+                    if (userId == Guid.Empty)
                     {
-                        _isSync = false;
-                        await Task.Delay(300000, stoppingToken);
+                        Debug.WriteLine("------[Worker] userId empty, waiting for login");
+                        _lastUserId = null;
+                        await _authSignal.WaitForLoginAsync(stoppingToken).ConfigureAwait(false);
                         continue;
                     }
 
-                    _isSync = true;
-                    var isExistTodayStats = await _flagService.GetByDate(userId, todayDate, stoppingToken);
-
-                    if (isExistTodayStats == null)
-                    {
-                        await _flagService.Add(todayDate, userId, false, stoppingToken);
-                        isExistTodayStats = await _flagService.GetByDate(userId, todayDate, stoppingToken);
-                    }
+                    _lastUserId = userId;
                 }
 
-                var dbService = scope.ServiceProvider.GetRequiredService<DayStatsService>();
-                var flagService = scope.ServiceProvider.GetRequiredService<StatsExistsFlagService>();
-                var stats = await dbService.GetByDate(todayDate, userId, stoppingToken);
-
-                if (stats != null)
+                var todayDate = DateOnly.FromDateTime(DateTime.Today);
+                using (var scope = _scopeFactory.CreateScope())
                 {
-                    var isExistTodayStats = await flagService.GetByDate(userId, todayDate, stoppingToken);
-                    Debug.WriteLine(
-                        $"-----[Worker] Flag: {(isExistTodayStats == null ? "-----NULL" : isExistTodayStats.IsExists.ToString())}");
-
-                    if (isExistTodayStats == null || !isExistTodayStats.IsExists)
+                    if (!_isSync)
                     {
-                        var result = await CreateWithRetryAsync(stats, userId, todayDate);
-                        Debug.WriteLine(
-                            $"--------[Worker] CreateDayStats -> IsError={result.IsError}, IsUnauthorized={result.IsUnauthorizedError}, msg={result.message}");
+                        var hydrationService = scope.ServiceProvider.GetRequiredService<DataSyncService>();
+                        var syncOk = await SyncWithRetryAsync(hydrationService, stoppingToken);
 
-                        if (!result.IsError && !result.IsUnauthorizedError)
+                        if (!syncOk)
                         {
-                            MarkAllSynced(userId, todayDate, stats);
-                            if (isExistTodayStats == null || !isExistTodayStats.IsExists)
-                                await flagService.Add(todayDate, userId, true, stoppingToken);
-                            else
-                                await flagService.Update(true, todayDate, userId, stoppingToken);
+                            _isSync = false;
+                            _connectionContainer.SetState(true);
+                            await Task.Delay(30000, stoppingToken);
+                            continue;
+                        }
+
+                        _isSync = true;
+                        var isExistTodayStats = await _flagService.GetByDate(userId, todayDate, stoppingToken);
+
+                        if (isExistTodayStats == null)
+                        {
+                            await _flagService.Add(todayDate, userId, false, stoppingToken);
+                            isExistTodayStats = await _flagService.GetByDate(userId, todayDate, stoppingToken);
                         }
                     }
-                    else
-                    {
-                        var key = (userId, todayDate);
-                        if (!_syncedTagMinutes.ContainsKey(key))
-                        {
-                            Debug.WriteLine(
-                                "--------[Worker] App restarted. Fetching today's synced tags from server to prevent duplicates...");
-                            var serverData = await _webApi.GetByDate(todayDate, userId);
-                            if (!serverData.IsError && !serverData.IsUnauthorizedError && serverData.Stats != null)
-                                MarkAllSynced(userId, todayDate, serverData.Stats);
-                        }
 
-                        var deltaTags = GetUnsyncedTags(userId, todayDate, stats);
-                        if (deltaTags.Count == 0)
+                    var dbService = scope.ServiceProvider.GetRequiredService<DayStatsService>();
+                    var flagService = scope.ServiceProvider.GetRequiredService<StatsExistsFlagService>();
+                    var stats = await dbService.GetByDate(todayDate, userId, stoppingToken);
+
+                    if (stats != null)
+                    {
+                        var isExistTodayStats = await flagService.GetByDate(userId, todayDate, stoppingToken);
+                        Debug.WriteLine(
+                            $"-----[Worker] Flag: {(isExistTodayStats == null ? "-----NULL" : isExistTodayStats.IsExists.ToString())}");
+
+                        if (isExistTodayStats == null || !isExistTodayStats.IsExists)
                         {
-                            Debug.WriteLine("--------[Worker] Nothing new to sync, skipping update call");
+                            var result = await CreateWithRetryAsync(stats, userId, todayDate);
+                            Debug.WriteLine(
+                                $"--------[Worker] CreateDayStats -> IsError={result.IsError}, IsUnauthorized={result.IsUnauthorizedError}, msg={result.message}");
+
+                            if (result.IsError)
+                            {
+                                _connectionContainer.SetState(true);
+                            }
+                            else if (!result.IsUnauthorizedError)
+                            {
+                                MarkAllSynced(userId, todayDate, stats);
+                                if (isExistTodayStats == null || !isExistTodayStats.IsExists)
+                                    await flagService.Add(todayDate, userId, true, stoppingToken);
+                                else
+                                    await flagService.Update(true, todayDate, userId, stoppingToken);
+                            }
                         }
                         else
                         {
-                            var result = await UpdateWithRetryAsync(stats, deltaTags);
-                            Debug.WriteLine(
-                                $"--------[Worker] UpdateDayStats -> IsError={result.IsError}, IsUnauthorized={result.IsUnauthorizedError}, msg={result.message}");
+                            var key = (userId, todayDate);
+                            if (!_syncedTagMinutes.ContainsKey(key))
+                            {
+                                Debug.WriteLine(
+                                    "--------[Worker] App restarted. Fetching today's synced tags from server to prevent duplicates...");
+                                var serverData = await _webApi.GetByDate(todayDate, userId);
 
-                            if (!result.IsError && !result.IsUnauthorizedError)
-                                MarkSynced(userId, todayDate, deltaTags);
+                                if (serverData.IsError)
+                                {
+                                    _connectionContainer.SetState(true);
+                                }
+                                else if (!serverData.IsUnauthorizedError && serverData.Stats != null)
+                                {
+                                    MarkAllSynced(userId, todayDate, serverData.Stats);
+                                }
+                            }
+
+                            var deltaTags = GetUnsyncedTags(userId, todayDate, stats);
+                            if (deltaTags.Count == 0)
+                            {
+                                Debug.WriteLine("--------[Worker] Nothing new to sync, skipping update call");
+                            }
+                            else
+                            {
+                                var result = await UpdateWithRetryAsync(stats, deltaTags);
+                                Debug.WriteLine(
+                                    $"--------[Worker] UpdateDayStats -> IsError={result.IsError}, IsUnauthorized={result.IsUnauthorizedError}, msg={result.message}");
+
+                                if (result.IsError)
+                                {
+                                    _connectionContainer.SetState(true);
+                                }
+                                else if (!result.IsUnauthorizedError)
+                                {
+                                    MarkSynced(userId, todayDate, deltaTags);
+                                }
+                            }
                         }
                     }
                 }
-            }
 
-            for (var i = 0; i < totalDelayMs; i += delayStepMs)
-            {
-                if (stoppingToken.IsCancellationRequested || _tokenContainer.GetUserId() != _lastUserId)
-                    break;
-                await Task.Delay(delayStepMs, stoppingToken);
+                for (var i = 0; i < totalDelayMs; i += delayStepMs)
+                {
+                    if (stoppingToken.IsCancellationRequested
+                        || _tokenContainer.GetUserId() != _lastUserId
+                        || _connectionContainer.GetState())         
+                    {
+                        break;
+                    }
+
+                    await Task.Delay(delayStepMs, stoppingToken);
+                }
             }
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
         }
     }
 

@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SirenaDesktop.Core.Models;
 
@@ -5,11 +6,18 @@ namespace SirenaDesktop.Repositories;
 
 public class DayStatsRepository(IDbContextFactory<SirenaDbContext> dbContextFactory) : IDayStatsRepository
 {
+    private static readonly SemaphoreSlim WriteLock = new(1, 1);
+
     private readonly IDbContextFactory<SirenaDbContext> _contextFactory = dbContextFactory;
 
-    public async Task CreateDayStats(DayStats entity, CancellationToken ct = default)
+    public Task CreateDayStats(DayStats entity, CancellationToken ct = default)
+    => WithWriteLockAsync(async () =>
     {
         using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+        var userExists = await context.User.AnyAsync(u => u.Id == entity.UserId, ct);
+        if (!userExists)
+            return;
 
         var existing = await context.DayStats
             .Include(s => s.Tags)
@@ -39,7 +47,7 @@ public class DayStatsRepository(IDbContextFactory<SirenaDbContext> dbContextFact
         }
 
         await context.SaveChangesAsync(ct);
-    }
+    }, ct);
 
     public async Task<DayStats?> GetByDateAsNoTracking(DateOnly date, Guid userId, CancellationToken ct = default)
     {
@@ -78,118 +86,160 @@ public class DayStatsRepository(IDbContextFactory<SirenaDbContext> dbContextFact
             .FirstOrDefaultAsync(c => c.UserId == userId && c.Date == date, ct);
     }
 
-    public async Task UpsertTag(Guid userId, DateOnly date, ActionTag tag, CancellationToken ct = default)
-    {
-        using var context = await _contextFactory.CreateDbContextAsync(ct);
-
-        var stats = await context.DayStats
-            .Include(s => s.Tags)
-            .FirstOrDefaultAsync(c => c.UserId == userId && c.Date == date, ct);
-
-        if (stats == null)
+    public Task UpsertTag(Guid userId, DateOnly date, ActionTag tag, CancellationToken ct = default)
+        => WithWriteLockAsync(async () =>
         {
-            var newDayStats = DayStats.Create(Guid.NewGuid(), userId, date, new List<ActionTag> { tag });
-            await context.AddAsync(newDayStats, ct);
+            using var context = await _contextFactory.CreateDbContextAsync(ct);
+
+            var stats = await context.DayStats
+                .Include(s => s.Tags)
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.Date == date, ct);
+
+            if (stats == null)
+            {
+                var newDayStats = DayStats.Create(Guid.NewGuid(), userId, date, new List<ActionTag> { tag });
+                await context.AddAsync(newDayStats, ct);
+                await context.SaveChangesAsync(ct);
+                return;
+            }
+
+            var existing = stats.Tags.FirstOrDefault(t => t.TagId == tag.TagId);
+
+            if (existing != null)
+            {
+                existing.RecordedMinutes = tag.RecordedMinutes;
+                existing.ColorHex = tag.ColorHex;
+                existing.AppTitle = tag.AppTitle;
+                existing.Domain = tag.Domain;
+                existing.DateTime = tag.DateTime;
+            }
+            else
+            {
+                stats.Tags.Add(tag);
+            }
+
             await context.SaveChangesAsync(ct);
-            return;
-        }
+        }, ct);
 
-        var existing = stats.Tags.FirstOrDefault(t => t.TagId == tag.TagId);
-
-        if (existing != null)
+    public Task SetProductivityPercent(Guid userId, DateOnly date, int percent, CancellationToken ct = default)
+        => WithWriteLockAsync(async () =>
         {
-            existing.RecordedMinutes = tag.RecordedMinutes;
-            existing.ColorHex = tag.ColorHex;
-            existing.AppTitle = tag.AppTitle;
-            existing.Domain = tag.Domain;
-            existing.DateTime = tag.DateTime;
-        }
-        else
-        {
-            stats.Tags.Add(tag);
-        }
+            using var context = await _contextFactory.CreateDbContextAsync(ct);
 
-        await context.SaveChangesAsync(ct);
-    }
+            var stats = await context.DayStats
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.Date == date, ct);
 
-    public async Task SetProductivityPercent(Guid userId, DateOnly date, int percent, CancellationToken ct = default)
-    {
-        using var context = await _contextFactory.CreateDbContextAsync(ct);
+            if (stats == null)
+            {
+                var newDayStats = DayStats.Create(Guid.NewGuid(), userId, date, new List<ActionTag>());
+                newDayStats.ProductivityPercent = percent;
+                await context.AddAsync(newDayStats, ct);
+            }
+            else
+            {
+                stats.ProductivityPercent = percent;
+            }
 
-        var stats = await context.DayStats
-            .FirstOrDefaultAsync(c => c.UserId == userId && c.Date == date, ct);
+            await context.SaveChangesAsync(ct);
+        }, ct);
 
-        if (stats == null)
-        {
-            var newDayStats = DayStats.Create(Guid.NewGuid(), userId, date, new List<ActionTag>());
-            newDayStats.ProductivityPercent = percent;
-            await context.AddAsync(newDayStats, ct);
-        }
-        else
-        {
-            stats.ProductivityPercent = percent;
-        }
-
-        await context.SaveChangesAsync(ct);
-    }
-
-    public async Task IncrementStudyUnits(Guid userId, DateOnly date, double studyUnitsDelta,
+    public Task IncrementStudyUnits(Guid userId, DateOnly date, double studyUnitsDelta,
         CancellationToken ct = default)
-    {
-        using var context = await _contextFactory.CreateDbContextAsync(ct);
-
-        var stats = await context.DayStats
-            .FirstOrDefaultAsync(c => c.UserId == userId && c.Date == date, ct);
-
-        if (stats == null)
+        => WithWriteLockAsync(async () =>
         {
-            var newDayStats = DayStats.Create(Guid.NewGuid(), userId, date, new List<ActionTag>());
-            newDayStats.StudyUnits = studyUnitsDelta;
-            await context.AddAsync(newDayStats, ct);
-        }
-        else
-        {
-            stats.StudyUnits += studyUnitsDelta;
-        }
+            using var context = await _contextFactory.CreateDbContextAsync(ct);
 
-        await context.SaveChangesAsync(ct);
-    }
+            var stats = await context.DayStats
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.Date == date, ct);
 
-    public async Task IncrementGitUnits(Guid userId, DateOnly date, double gitUnitsDelta,
+            if (stats == null)
+            {
+                var newDayStats = DayStats.Create(Guid.NewGuid(), userId, date, new List<ActionTag>());
+                newDayStats.StudyUnits = studyUnitsDelta;
+                await context.AddAsync(newDayStats, ct);
+            }
+            else
+            {
+                stats.StudyUnits += studyUnitsDelta;
+            }
+
+            await context.SaveChangesAsync(ct);
+        }, ct);
+
+    public Task IncrementGitUnits(Guid userId, DateOnly date, double gitUnitsDelta,
         IEnumerable<string> newlyScoredShas, CancellationToken ct = default)
-    {
-        using var context = await _contextFactory.CreateDbContextAsync(ct);
-
-        var shas = newlyScoredShas as ICollection<string> ?? newlyScoredShas.ToList();
-
-        var stats = await context.DayStats
-            .FirstOrDefaultAsync(c => c.UserId == userId && c.Date == date, ct);
-
-        if (stats == null)
+        => WithWriteLockAsync(async () =>
         {
-            var newDayStats = DayStats.Create(Guid.NewGuid(), userId, date, new List<ActionTag>());
-            newDayStats.GitUnits = gitUnitsDelta;
-            newDayStats.ScoredCommitShas = new HashSet<string>(shas);
-            await context.AddAsync(newDayStats, ct);
-        }
-        else
-        {
-            stats.GitUnits += gitUnitsDelta;
-            stats.ScoredCommitShas = new HashSet<string>(stats.ScoredCommitShas.Union(shas));
-        }
+            using var context = await _contextFactory.CreateDbContextAsync(ct);
 
-        await context.SaveChangesAsync(ct);
-    }
+            var shas = newlyScoredShas as ICollection<string> ?? newlyScoredShas.ToList();
+
+            var stats = await context.DayStats
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.Date == date, ct);
+
+            if (stats == null)
+            {
+                var newDayStats = DayStats.Create(Guid.NewGuid(), userId, date, new List<ActionTag>());
+                newDayStats.GitUnits = gitUnitsDelta;
+                newDayStats.ScoredCommitShas = new HashSet<string>(shas);
+                await context.AddAsync(newDayStats, ct);
+            }
+            else
+            {
+                stats.GitUnits += gitUnitsDelta;
+                stats.ScoredCommitShas = new HashSet<string>(stats.ScoredCommitShas.Union(shas));
+            }
+
+            await context.SaveChangesAsync(ct);
+        }, ct);
 
     public async Task<bool> CheckStats(DateOnly day, Guid userId, CancellationToken ct = default)
     {
         using var context = await _contextFactory.CreateDbContextAsync(ct);
-        return await context.DayStats.AnyAsync(c => c.Date == day && c.UserId == userId);
+        return await context.DayStats.AnyAsync(c => c.Date == day && c.UserId == userId, ct);
     }
 
     public async Task<bool> HasAnyData(Guid userId, CancellationToken ct = default)
     {
         using var context = await _contextFactory.CreateDbContextAsync(ct);
         return await context.DayStats.AnyAsync(c => c.UserId == userId, ct);
+    }
+
+    private static async Task WithWriteLockAsync(Func<Task> action, CancellationToken ct)
+    {
+        await WriteLock.WaitAsync(ct);
+        try
+        {
+            await WithRetryAsync(async () =>
+            {
+                await action();
+                return true;
+            }, ct);
+        }
+        finally
+        {
+            WriteLock.Release();
+        }
+    }
+
+    private static async Task<T> WithRetryAsync<T>(Func<Task<T>> action, CancellationToken ct,
+        int maxAttempts = 5)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await action();
+            }
+            catch (SqliteException ex) when (ex.SqliteErrorCode == 5 && attempt < maxAttempts)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(50 * attempt), ct);
+            }
+            catch (DbUpdateException ex) when (
+                ex.InnerException is SqliteException { SqliteErrorCode: 5 } && attempt < maxAttempts)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(50 * attempt), ct);
+            }
+        }
     }
 }

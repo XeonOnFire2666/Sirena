@@ -1,7 +1,9 @@
+using Google.Apis.Auth.OAuth2.Responses;
 using Microsoft.Extensions.Configuration;
 using SirenaDesktop.ApiCallers;
 using SirenaDesktop.Application.Contracts;
 using SirenaDesktop.Contracts.User;
+using System.Diagnostics;
 
 namespace SirenaDesktop.Infrastructure.Auth;
 
@@ -25,6 +27,10 @@ public class GoogleAuthService(IConfiguration configuration, UserApiCaller api) 
         catch (OperationCanceledException)
         {
             await executor.CancelOperation();
+        }
+        catch (TokenResponseException ex)
+        {    
+            Debug.WriteLine($"Google sign-in failed: {ex.Error.Error} - {ex.Error.ErrorDescription}");
         }
 
         return new LoginResponse();

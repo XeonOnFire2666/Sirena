@@ -6,11 +6,14 @@ public record WorkspaceSyncResult(List<Workspace> Workspaces, bool IsOffline);
 
 public interface IWorkspaceService
 {
+    event EventHandler? Changed;
+
     Task<List<Workspace>> GetAll();
     Task<List<Workspace>> GetByDate(DateOnly date);
     Task<WorkspaceSyncResult> Sync();
     Task<Workspace> Add(string workspaceTypeId, string name, DateOnly date);
     Task Delete(Workspace ws);
+    Task Update(Workspace ws);
     Task ClearAllWorkspaces();
     Task<TodoItem> AddTodo(Workspace ws, string title, DateTime? startTime, DateTime? endTime);
     Task UpdateTodo(Workspace ws, TodoItem todo);

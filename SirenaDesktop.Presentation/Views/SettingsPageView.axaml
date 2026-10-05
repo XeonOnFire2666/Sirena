@@ -1,0 +1,511 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:converters="clr-namespace:SirenaDesktop.Presentation.Converters"
+             xmlns:viewModels="clr-namespace:SirenaDesktop.ViewModels"
+             x:Class="SirenaDesktop.Views.SettingsPageView"
+             x:DataType="viewModels:MainMenuViewModel">
+
+    <UserControl.Resources>
+        <FontFamily x:Key="SourceSerifFont">
+            avares://SirenaDesktop.Presentation/Fonts#Source Serif 4
+        </FontFamily>
+        <FontFamily x:Key="InterFont">
+            avares://SirenaDesktop.Presentation/Fonts#Inter
+        </FontFamily>
+
+        <converters:NullToBoolConverter x:Key="NullToBoolConverter" />
+        <converters:BoolToGitIconConverter x:Key="BoolToGitIconConverter" />
+        <converters:BoolToGitBrushConverter x:Key="BoolToGitBrushConverter" />
+        <converters:BoolToKeyStatusIconConverter x:Key="BoolToKeyStatusIconConverter" />
+        <converters:KeyStatusTextConverter x:Key="KeyStatusTextConverter" />
+        <converters:SafeImageBitmapConverter x:Key="SafeImageBitmapConverter" />
+
+        <SplineEasing x:Key="SmoothEase" X1="0.2" Y1="0" X2="0" Y2="1" />
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+
+        <Style Selector="Border.card">
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="Background" Value="#12888888" />
+            <Setter Property="BorderBrush" Value="#26888888" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style Selector="Button.solid">
+            <Setter Property="Background" Value="#1F888888" />
+            <Setter Property="BorderBrush" Value="#26888888" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource SukiText}" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="16,10" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border x:Name="PART_Root"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          Padding="{TemplateBinding Padding}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.solid /template/ Border#PART_Root">
+            <Setter Property="RenderTransform" Value="scale(1)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" Easing="{StaticResource SmoothEase}" />
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" Easing="{StaticResource SmoothEase}" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.solid:pointerover /template/ Border#PART_Root">
+            <Setter Property="Opacity" Value="0.88" />
+        </Style>
+        <Style Selector="Button.solid:pressed /template/ Border#PART_Root">
+            <Setter Property="RenderTransform" Value="scale(0.96)" />
+        </Style>
+        <Style Selector="Button.solid:disabled">
+            <Setter Property="Opacity" Value="0.5" />
+        </Style>
+
+        <Style Selector="Button.solid.accent">
+            <Setter Property="Background" Value="{DynamicResource SukiPrimaryColor}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.solid.danger">
+            <Setter Property="Background" Value="#da4e3e" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.solid.icon">
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+
+        <Style Selector="TextBox.field">
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="14,11" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Background" Value="#12888888" />
+            <Setter Property="BorderBrush" Value="#26888888" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style Selector="Button.themeButton">
+            <Setter Property="BorderBrush" Value="#26888888" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="18,14" />
+            <Setter Property="MinHeight" Value="76" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border x:Name="PART_Root"
+                            CornerRadius="16"
+                            Background="#12888888"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            ClipToBounds="True">
+                        <Panel>
+                            <Border x:Name="PART_TintLight" Background="#FFB300" Opacity="0.14" IsHitTestVisible="False" />
+                            <Border x:Name="PART_TintDark" Background="{DynamicResource SukiPrimaryColor}" Opacity="0" IsHitTestVisible="False" />
+                            <ContentPresenter Content="{TemplateBinding Content}"
+                                              Padding="{TemplateBinding Padding}"
+                                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Panel>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.themeButton /template/ Border#PART_Root">
+            <Setter Property="RenderTransform" Value="scale(1)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" Easing="{StaticResource SmoothEase}" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.themeButton:pressed /template/ Border#PART_Root">
+            <Setter Property="RenderTransform" Value="scale(0.96)" />
+        </Style>
+        <Style Selector="Button.themeButton /template/ Border#PART_TintLight">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.3" Easing="{StaticResource SmoothEase}" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.themeButton /template/ Border#PART_TintDark">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.3" Easing="{StaticResource SmoothEase}" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.themeButton.dark /template/ Border#PART_TintLight">
+            <Setter Property="Opacity" Value="0" />
+        </Style>
+        <Style Selector="Button.themeButton.dark /template/ Border#PART_TintDark">
+            <Setter Property="Opacity" Value="0.22" />
+        </Style>
+
+        <Style Selector="icons|MaterialIcon.swap">
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="RenderTransform" Value="rotate(-90deg) scale(0.25)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.3" Easing="{StaticResource SmoothEase}" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.3" Easing="{StaticResource SmoothEase}" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="icons|MaterialIcon.swap.moon">
+            <Setter Property="RenderTransform" Value="rotate(90deg) scale(0.25)" />
+        </Style>
+        <Style Selector="icons|MaterialIcon.swap.on">
+            <Setter Property="Opacity" Value="1" />
+            <Setter Property="RenderTransform" Value="rotate(0deg) scale(1)" />
+        </Style>
+
+        <Style Selector="Slider.settingSlider">
+            <Setter Property="MinHeight" Value="32" />
+        </Style>
+
+        <!-- === Inter on text input fields === -->
+        <Style Selector="TextBox">
+            <Setter Property="FontFamily" Value="{StaticResource InterFont}" />
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="FontFamily" Value="{StaticResource InterFont}" />
+        </Style>
+
+        <!-- === Source Serif 4 on buttons / tooltips === -->
+        <Style Selector="Button">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="Button TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="ToolTip">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+        <Style Selector="ToolTip TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SourceSerifFont}" />
+        </Style>
+
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="24,20,24,8">
+            <Button Grid.Column="0"
+                    Classes="solid icon"
+                    Command="{Binding CloseSettingsCommand}"
+                    ToolTip.Tip="Back">
+                <icons:MaterialIcon Kind="ArrowLeft" Width="20" Height="20"
+                                    IsHitTestVisible="False" />
+            </Button>
+            <TextBlock Grid.Column="1"
+                       Text="Settings"
+                       Classes="serif"
+                       FontSize="30" FontWeight="Bold"
+                       VerticalAlignment="Center"
+                       Margin="16,0,0,0" />
+        </Grid>
+
+        <ScrollViewer x:Name="SettingsScroll" Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel x:Name="ContentPanel"
+                        MaxWidth="640"
+                        HorizontalAlignment="Center"
+                        Margin="24,8,24,48"
+                        Spacing="32">
+
+                <StackPanel Spacing="12">
+                    <StackPanel Margin="4,0" Spacing="2">
+                        <TextBlock Text="Appearance" Classes="serif" FontSize="20" FontWeight="SemiBold" />
+                        <TextBlock Text="Switch between light and dark theme"
+                                   FontSize="13" Opacity="0.7" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <Button Classes="themeButton"
+                            Classes.dark="{Binding IsDarkTheme}"
+                            Command="{Binding ToggleThemeCommand}"
+                            ToolTip.Tip="Toggle theme">
+                        <Grid ColumnDefinitions="Auto,*">
+                            <Panel Grid.Column="0" Width="44" Height="44" VerticalAlignment="Center">
+                                <icons:MaterialIcon Classes="swap sun"
+                                                    Classes.on="{Binding !IsDarkTheme}"
+                                                    Kind="WeatherSunny"
+                                                    Width="32" Height="32"
+                                                    Foreground="#FFB300"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center" />
+                                <icons:MaterialIcon Classes="swap moon"
+                                                    Classes.on="{Binding IsDarkTheme}"
+                                                    Kind="WeatherNight"
+                                                    Width="32" Height="32"
+                                                    Foreground="{DynamicResource SukiPrimaryColor}"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center" />
+                            </Panel>
+                            <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock Text="Dark theme" FontSize="16" FontWeight="Medium" />
+                                <TextBlock Text="{Binding ThemeLabel}" FontSize="12" Opacity="0.7" />
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+
+                <StackPanel Spacing="12" x:Name="TimerSettingsSection">
+                    <StackPanel Margin="4,0" Spacing="2">
+                        <TextBlock Text="Timer" Classes="serif" FontSize="20" FontWeight="SemiBold" />
+                        <TextBlock Text="Sound, volume and auto-start behavior"
+                                   FontSize="13" Opacity="0.7" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <Border Classes="card">
+                        <StackPanel Spacing="20">
+
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Volume" FontSize="14" FontWeight="Medium" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding TimerSettings.Volume, StringFormat={}{0:P0}}"
+                                               FontSize="12" Opacity="0.7" VerticalAlignment="Center" />
+                                </Grid>
+                                <Slider Classes="settingSlider"
+                                        Minimum="0" Maximum="1"
+                                        Value="{Binding TimerSettings.Volume, Mode=TwoWay}" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Fade-in duration" FontSize="14" FontWeight="Medium" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding TimerSettings.FadeInSeconds, StringFormat={}{0:0}s}"
+                                               FontSize="12" Opacity="0.7" VerticalAlignment="Center" />
+                                </Grid>
+                                <Slider Classes="settingSlider"
+                                        Minimum="0" Maximum="10"
+                                        Value="{Binding TimerSettings.FadeInSeconds, Mode=TwoWay}" />
+                            </StackPanel>
+
+                            <Border Height="1" Background="#26888888" />
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Work sound" FontSize="14" FontWeight="Medium" />
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding TimerSettings.WorkSoundLabel}"
+                                               FontSize="12" Opacity="0.7"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <Button Grid.Column="1"
+                                            Classes="solid"
+                                            Content="Browse"
+                                            Margin="8,0,0,0"
+                                            Command="{Binding TimerSettings.BrowseWorkSoundCommand}" />
+                                    <Button Grid.Column="2"
+                                            Classes="solid"
+                                            Content="Reset"
+                                            Margin="8,0,0,0"
+                                            Command="{Binding TimerSettings.ResetWorkSoundCommand}" />
+                                </Grid>
+                            </StackPanel>
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Break sound" FontSize="14" FontWeight="Medium" />
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding TimerSettings.BreakSoundLabel}"
+                                               FontSize="12" Opacity="0.7"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <Button Grid.Column="1"
+                                            Classes="solid"
+                                            Content="Browse"
+                                            Margin="8,0,0,0"
+                                            Command="{Binding TimerSettings.BrowseBreakSoundCommand}" />
+                                    <Button Grid.Column="2"
+                                            Classes="solid"
+                                            Content="Reset"
+                                            Margin="8,0,0,0"
+                                            Command="{Binding TimerSettings.ResetBreakSoundCommand}" />
+                                </Grid>
+                            </StackPanel>
+
+                            <Border Height="1" Background="#26888888" />
+
+                            <StackPanel Spacing="10">
+                                <CheckBox Content="Automatically start break when work ends"
+                                          IsChecked="{Binding TimerSettings.AutoStartBreak, Mode=TwoWay}" />
+                                <CheckBox Content="Automatically start work when break ends"
+                                          IsChecked="{Binding TimerSettings.AutoStartWork, Mode=TwoWay}" />
+                            </StackPanel>
+
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="12">
+                    <StackPanel Margin="4,0" Spacing="2">
+                        <TextBlock Text="Git Repository" Classes="serif" FontSize="20" FontWeight="SemiBold" />
+                        <TextBlock Text="Local project folder for tracking commits and awarding bonus points to the productivity score"
+                                   FontSize="13" Opacity="0.7" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <Border Classes="card" Padding="16,8,8,8">
+                            <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="44">
+                                <icons:MaterialIcon Grid.Column="0"
+                                                    Kind="{Binding GitSettings.IsRepoValid, Converter={StaticResource BoolToGitIconConverter}}"
+                                                    Width="24" Height="24"
+                                                    VerticalAlignment="Center"
+                                                    Margin="0,0,12,0"
+                                                    Foreground="{Binding GitSettings.IsRepoValid, Converter={StaticResource BoolToGitBrushConverter}}" />
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding GitSettings.RepoDisplayName, FallbackValue='No repository selected', TargetNullValue='No repository selected'}"
+                                               FontWeight="Medium" FontSize="14" />
+                                    <TextBlock Text="{Binding GitSettings.RepoPath}"
+                                               FontSize="11" Opacity="0.7"
+                                               TextTrimming="CharacterEllipsis"
+                                               IsVisible="{Binding GitSettings.RepoPath, Converter={StaticResource NullToBoolConverter}}" />
+                                    <TextBlock Text="{Binding GitSettings.StatusMessage}"
+                                               FontSize="11" Margin="0,2,0,0"
+                                               Foreground="{Binding GitSettings.IsRepoValid, Converter={StaticResource BoolToGitBrushConverter}}"
+                                               IsVisible="{Binding GitSettings.StatusMessage, Converter={StaticResource NullToBoolConverter}}" />
+                                </StackPanel>
+
+                                <Button Grid.Column="2"
+                                        Classes="solid icon"
+                                        Width="32" Height="32"
+                                        CornerRadius="8"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding GitSettings.ClearRepoCommand}"
+                                        ToolTip.Tip="Disconnect repository"
+                                        IsVisible="{Binding GitSettings.RepoPath, Converter={StaticResource NullToBoolConverter}}">
+                                    <icons:MaterialIcon Kind="Close" Width="16" Height="16"
+                                                        IsHitTestVisible="False" />
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <Button Classes="solid"
+                                Content="Select Repository Folder"
+                                Command="{Binding GitSettings.BrowseRepoCommand}"
+                                HorizontalAlignment="Stretch"
+                                MinHeight="48" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Spacing="12">
+                    <StackPanel Margin="4,0" Spacing="2">
+                        <TextBlock Text="Gemini API Key" Classes="serif" FontSize="20" FontWeight="SemiBold" />
+                        <TextBlock Text="The key is stored locally in secure storage"
+                                   FontSize="13" Opacity="0.7" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="4,0">
+                            <icons:MaterialIcon Kind="{Binding ApiKeySettings.HasSavedKey, Converter={StaticResource BoolToKeyStatusIconConverter}}"
+                                                Width="18" Height="18"
+                                                VerticalAlignment="Center"
+                                                Foreground="{DynamicResource SukiPrimaryColor}" />
+                            <TextBlock VerticalAlignment="Center"
+                                       Text="{Binding ApiKeySettings.HasSavedKey, Converter={StaticResource KeyStatusTextConverter}, FallbackValue='No key set'}"
+                                       FontSize="12"
+                                       Opacity="0.6" />
+                        </StackPanel>
+
+                        <TextBox x:Name="ApiKeyTextBox"
+                                 Classes="field"
+                                 Watermark="Enter API key"
+                                 Text="{Binding ApiKeySettings.ApiKeyInput, Mode=TwoWay}" />
+
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    Spacing="8">
+                            <Button Classes="solid danger"
+                                    Content="Delete Key"
+                                    Command="{Binding ApiKeySettings.DeleteApiKeyCommand}"
+                                    IsVisible="{Binding ApiKeySettings.HasSavedKey}" />
+                            <Button Classes="solid accent"
+                                    Content="Save"
+                                    MinWidth="96"
+                                    Command="{Binding ApiKeySettings.SaveApiKeyCommand}" />
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding ApiKeySettings.StatusMessage}"
+                                   Foreground="{DynamicResource SukiPrimaryColor}"
+                                   Margin="4,0"
+                                   TextWrapping="Wrap"
+                                   IsVisible="{Binding ApiKeySettings.StatusMessage, Converter={StaticResource NullToBoolConverter}}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel x:Name="AccountSection" Spacing="12">
+                    <StackPanel Margin="4,0" Spacing="2">
+                        <TextBlock Text="Account" Classes="serif" FontSize="20" FontWeight="SemiBold" />
+                        <TextBlock Text="Your profile and session"
+                                   FontSize="13" Opacity="0.7" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <Border Classes="card" Padding="8,8,16,8">
+                            <Grid ColumnDefinitions="Auto,*" MinHeight="48">
+                                <Border Grid.Column="0"
+                                        Width="48" Height="48"
+                                        CornerRadius="8"
+                                        ClipToBounds="True"
+                                        Background="{DynamicResource SukiLowBackgroundColor}">
+                                    <Panel>
+                                        <icons:MaterialIcon Kind="AccountCircle" Width="34" Height="34"
+                                                            Foreground="{DynamicResource SukiPrimaryColor}"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center" />
+                                        <Image Source="{Binding UserPictureUrl, Converter={StaticResource SafeImageBitmapConverter}}"
+                                               Stretch="UniformToFill" />
+                                    </Panel>
+                                </Border>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding UserName, FallbackValue='Loading...'}"
+                                           FontSize="16" FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center"
+                                           Margin="16,0,0,0" />
+                            </Grid>
+                        </Border>
+
+                        <Button Classes="solid danger"
+                                Content="Sign Out"
+                                Command="{Binding LogoutCommand}"
+                                HorizontalAlignment="Stretch"
+                                MinHeight="48" />
+                    </StackPanel>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

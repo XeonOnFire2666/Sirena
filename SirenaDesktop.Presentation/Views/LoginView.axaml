@@ -1,0 +1,323 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:suki="https://github.com/kikipoulet/SukiUI"
+             xmlns:materialIcons="using:Material.Icons.Avalonia"
+             xmlns:vm="using:SirenaDesktop.ViewModels"
+             mc:Ignorable="d"
+             d:DesignWidth="1000" d:DesignHeight="640"
+             x:Class="SirenaDesktop.Views.LoginView"
+             x:DataType="vm:LoginViewModel"
+             FontFamily="avares://SirenaDesktop.Presentation/Fonts/Inter-VariableFont_opsz,wght.ttf#Inter">
+
+    <UserControl.Resources>
+        <RadialGradientBrush x:Key="GlowBrush1" Center="50%,50%" GradientOrigin="50%,50%" RadiusX="50%" RadiusY="50%">
+            <GradientStop Color="#FFE53935" Offset="0" />
+            <GradientStop Color="#CCE53935" Offset="0.35" />
+            <GradientStop Color="#55E53935" Offset="0.7" />
+            <GradientStop Color="#00E53935" Offset="1" />
+        </RadialGradientBrush>
+        <RadialGradientBrush x:Key="GlowBrush2" Center="50%,50%" GradientOrigin="50%,50%" RadiusX="50%" RadiusY="50%">
+            <GradientStop Color="#FFC62828" Offset="0" />
+            <GradientStop Color="#CCC62828" Offset="0.35" />
+            <GradientStop Color="#55C62828" Offset="0.7" />
+            <GradientStop Color="#00C62828" Offset="1" />
+        </RadialGradientBrush>
+        <RadialGradientBrush x:Key="GlowBrush3" Center="50%,50%" GradientOrigin="50%,50%" RadiusX="50%" RadiusY="50%">
+            <GradientStop Color="#FFB71C1C" Offset="0" />
+            <GradientStop Color="#CCB71C1C" Offset="0.35" />
+            <GradientStop Color="#55B71C1C" Offset="0.7" />
+            <GradientStop Color="#00B71C1C" Offset="1" />
+        </RadialGradientBrush>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="Button.PrimaryPill">
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="26,16" />
+            <Setter Property="Background" Value="#1B1B1F" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="RenderTransform" Value="scale(1)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut" />
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.PrimaryPill:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#33333A" />
+        </Style>
+        <Style Selector="Button.PrimaryPill:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.015)" />
+        </Style>
+        <Style Selector="Button.PrimaryPill:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.96)" />
+        </Style>
+        <Style Selector="Button.PrimaryPill:disabled">
+            <Setter Property="Opacity" Value="0.6" />
+        </Style>
+
+        <Style Selector="Button.PrimaryPill:pointerover materialIcons|MaterialIcon#ArrowGlyph">
+            <Setter Property="RenderTransform" Value="translateX(3px)" />
+        </Style>
+        <Style Selector="Button.PrimaryPill materialIcons|MaterialIcon#ArrowGlyph">
+            <Setter Property="RenderTransform" Value="translateX(0)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Border.GlassPanel">
+            <Setter Property="Background" Value="#33FFFFFF" />
+            <Setter Property="CornerRadius" Value="28" />
+            <Setter Property="BoxShadow" Value="0 20 60 0 #33000000, 0 2 8 0 #22000000" />
+        </Style>
+
+        <Style Selector="TextBlock.StatusText">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.2" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Ellipse.Glow1">
+            <Style.Animations>
+                <Animation Duration="0:0:20" IterationCount="Infinite" PlaybackDirection="Alternate" Easing="CubicEaseInOut">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="TranslateTransform.Y" Value="0" />
+                        <Setter Property="TranslateTransform.X" Value="0" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="1" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                        <Setter Property="Opacity" Value="0.5" />
+                    </KeyFrame>
+                    <KeyFrame Cue="25%">
+                        <Setter Property="TranslateTransform.Y" Value="110" />
+                        <Setter Property="TranslateTransform.X" Value="90" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="1.2" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1.2" />
+                        <Setter Property="Opacity" Value="0.85" />
+                    </KeyFrame>
+                    <KeyFrame Cue="55%">
+                        <Setter Property="TranslateTransform.Y" Value="-60" />
+                        <Setter Property="TranslateTransform.X" Value="140" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="0.85" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="0.85" />
+                        <Setter Property="Opacity" Value="0.6" />
+                    </KeyFrame>
+                    <KeyFrame Cue="80%">
+                        <Setter Property="TranslateTransform.Y" Value="-130" />
+                        <Setter Property="TranslateTransform.X" Value="-80" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="1.15" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1.15" />
+                        <Setter Property="Opacity" Value="0.9" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="TranslateTransform.Y" Value="-150" />
+                        <Setter Property="TranslateTransform.X" Value="-160" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="0.9" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="0.9" />
+                        <Setter Property="Opacity" Value="0.45" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <Style Selector="Ellipse.Glow2">
+            <Style.Animations>
+                <Animation Duration="0:0:25" IterationCount="Infinite" PlaybackDirection="Alternate" Easing="CubicEaseInOut">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="TranslateTransform.Y" Value="0" />
+                        <Setter Property="TranslateTransform.X" Value="0" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="1" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                        <Setter Property="Opacity" Value="0.55" />
+                    </KeyFrame>
+                    <KeyFrame Cue="25%">
+                        <Setter Property="TranslateTransform.Y" Value="-150" />
+                        <Setter Property="TranslateTransform.X" Value="-110" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="1.25" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1.25" />
+                        <Setter Property="Opacity" Value="0.9" />
+                    </KeyFrame>
+                    <KeyFrame Cue="55%">
+                        <Setter Property="TranslateTransform.Y" Value="80" />
+                        <Setter Property="TranslateTransform.X" Value="-160" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="0.85" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="0.85" />
+                        <Setter Property="Opacity" Value="0.6" />
+                    </KeyFrame>
+                    <KeyFrame Cue="80%">
+                        <Setter Property="TranslateTransform.Y" Value="140" />
+                        <Setter Property="TranslateTransform.X" Value="100" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="1.18" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1.18" />
+                        <Setter Property="Opacity" Value="0.92" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="TranslateTransform.Y" Value="160" />
+                        <Setter Property="TranslateTransform.X" Value="170" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="0.9" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="0.9" />
+                        <Setter Property="Opacity" Value="0.5" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <Style Selector="Ellipse.Glow3">
+            <Style.Animations>
+                <Animation Duration="0:0:30" IterationCount="Infinite" PlaybackDirection="Alternate" Easing="CubicEaseInOut">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="TranslateTransform.Y" Value="0" />
+                        <Setter Property="TranslateTransform.X" Value="0" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="1" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                        <Setter Property="Opacity" Value="0.45" />
+                    </KeyFrame>
+                    <KeyFrame Cue="25%">
+                        <Setter Property="TranslateTransform.Y" Value="120" />
+                        <Setter Property="TranslateTransform.X" Value="-140" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="1.2" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1.2" />
+                        <Setter Property="Opacity" Value="0.75" />
+                    </KeyFrame>
+                    <KeyFrame Cue="55%">
+                        <Setter Property="TranslateTransform.Y" Value="-100" />
+                        <Setter Property="TranslateTransform.X" Value="-180" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="0.85" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="0.85" />
+                        <Setter Property="Opacity" Value="0.5" />
+                    </KeyFrame>
+                    <KeyFrame Cue="80%">
+                        <Setter Property="TranslateTransform.Y" Value="-150" />
+                        <Setter Property="TranslateTransform.X" Value="130" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="1.15" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1.15" />
+                        <Setter Property="Opacity" Value="0.72" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="TranslateTransform.Y" Value="140" />
+                        <Setter Property="TranslateTransform.X" Value="160" />
+                        <Setter Property="ScaleTransform.ScaleX" Value="0.9" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="0.9" />
+                        <Setter Property="Opacity" Value="0.4" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid>
+        <Panel ClipToBounds="True">
+            <Rectangle>
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Color="#FFEDE4FF" Offset="0" />
+                        <GradientStop Color="#FFE2EEFF" Offset="0.45" />
+                        <GradientStop Color="#FFFFE9F0" Offset="1" />
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <Ellipse Classes="Glow1"
+                     Width="900" Height="900" Fill="{StaticResource GlowBrush1}"
+                     HorizontalAlignment="Left" VerticalAlignment="Top"
+                     Margin="-420,-400,0,0"
+                     RenderTransformOrigin="50%,50%">
+                <Ellipse.Effect>
+                    <BlurEffect Radius="140" />
+                </Ellipse.Effect>
+                <Ellipse.RenderTransform>
+                    <TransformGroup>
+                        <TranslateTransform />
+                        <ScaleTransform />
+                    </TransformGroup>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+
+            <Ellipse Classes="Glow2"
+                     Width="980" Height="980" Fill="{StaticResource GlowBrush2}"
+                     HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                     Margin="0,0,-460,-460"
+                     RenderTransformOrigin="50%,50%">
+                <Ellipse.Effect>
+                    <BlurEffect Radius="150" />
+                </Ellipse.Effect>
+                <Ellipse.RenderTransform>
+                    <TransformGroup>
+                        <TranslateTransform />
+                        <ScaleTransform />
+                    </TransformGroup>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+
+            <Ellipse Classes="Glow3"
+                     Width="760" Height="760" Fill="{StaticResource GlowBrush3}"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                     Margin="260,-40,0,0"
+                     RenderTransformOrigin="50%,50%">
+                <Ellipse.Effect>
+                    <BlurEffect Radius="130" />
+                </Ellipse.Effect>
+                <Ellipse.RenderTransform>
+                    <TransformGroup>
+                        <TranslateTransform />
+                        <ScaleTransform />
+                    </TransformGroup>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+        </Panel>
+
+        <Grid RowDefinitions="*,Auto,*" Margin="48">
+            <StackPanel Grid.Row="1" HorizontalAlignment="Center" Spacing="0" MaxWidth="560">
+
+                <TextBlock HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           Margin="0,0,0,44"
+                           FontFamily="avares://SirenaDesktop.Presentation/Fonts/SourceSerif4-Italic-VariableFont_opsz,wght.ttf#Source Serif 4"
+                           FontStyle="Italic"
+                           FontSize="48"
+                           Foreground="#5C3A21">
+                    <Run Text="Welcome to" />
+                    <LineBreak />
+                    <Run Text="a calmer internet" />
+                </TextBlock>
+
+                <Button x:Name="GoogleLoginButton"
+                        Classes="PrimaryPill"
+                        HorizontalAlignment="Center"
+                        Width="320"
+                        HorizontalContentAlignment="Center"
+                        Command="{Binding GoogleLoginCommand}"
+                        IsEnabled="{Binding !IsBusy}"
+                        AutomationProperties.Name="LoginByGoogleButton">
+                    <Button.Styles>
+                        <Style Selector="Button.PrimaryPill /template/ ContentPresenter">
+                            <Setter Property="CornerRadius" Value="8" />
+                        </Style>
+                    </Button.Styles>
+                    <materialIcons:MaterialIcon x:Name="ArrowGlyph"
+                                                Kind="ArrowRightThick"
+                                                Width="22" Height="22" />
+                </Button>
+
+                <TextBlock Text="{Binding StatusMessage}"
+                           Classes="StatusText"
+                           HorizontalAlignment="Center"
+                           Foreground="#8A8A93"
+                           FontSize="13"
+                           Margin="0,18,0,0"
+                           IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -2,13 +2,12 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Runtime.CompilerServices;
-using System.Windows.Threading;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using SirenaDesktop.Application.Contracts;
+using SirenaDesktop.Application.Contracts.Connect;
 using SirenaDesktop.Repositories;
 using SirenaDesktop.Services;
-using static System.Windows.Application;
-
 
 namespace SirenaDesktop.ViewModels;
 
@@ -16,6 +15,7 @@ public partial class MainWindowViewModel : ObservableObject
 {
     private readonly IAuthSignalService _authSignal;
     private readonly IPendingChangeRepository _changeRepository;
+    private readonly IConnectionContainer _connectionContainer;
     private readonly Dispatcher _dispatcher;
     private readonly JwtSecurityTokenHandler _jwtHandler = new();
     private readonly IJwtTokenContainer _jwtTokenContainer;
@@ -31,6 +31,10 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty] private bool _isNavigationLoading;
 
+    [ObservableProperty] private bool _isConnectionBannerVisible;
+
+    [ObservableProperty] private bool _isOffline;
+
     public MainWindowViewModel(
         TokensService tokensService,
         IJwtTokenContainer jwtTokenContainer,
@@ -42,7 +46,8 @@ public partial class MainWindowViewModel : ObservableObject
         StatsExistsFlagService statsExistsFlagService,
         IWorkspaceService workspaceService,
         IPendingChangeRepository changeRepository,
-        TodoItemService todoItemService)
+        TodoItemService todoItemService,
+        IConnectionContainer connectionContainer)
     {
         _userService = userService;
         _tokensService = tokensService;
@@ -53,11 +58,34 @@ public partial class MainWindowViewModel : ObservableObject
         _mainMenuViewModelFactory = mainMenuViewModelFactory;
         _workspaceService = workspaceService;
         _changeRepository = changeRepository;
-        _dispatcher = Current.Dispatcher;
+        _todoItemService = todoItemService;
+        _dispatcher = Dispatcher.UIThread;
+        _connectionContainer = connectionContainer;
 
         _currentViewModel = new SplashViewModel();
+
+        _isOffline = _connectionContainer.GetState();
+        _connectionContainer.StateChanged += OnConnectionStateChanged;
+
         _ = InitializeAsync();
-        _todoItemService = todoItemService;
+    }
+
+    private void OnConnectionStateChanged(bool isError)
+    {
+        _dispatcher.Post(async () =>
+        {
+            IsOffline = isError;
+            IsConnectionBannerVisible = true;
+
+            if (!isError)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                if (!IsOffline)
+                {
+                    IsConnectionBannerVisible = false;
+                }
+            }
+        });
     }
 
     private async Task InitializeAsync()
@@ -118,26 +146,33 @@ public partial class MainWindowViewModel : ObservableObject
     public async Task CheckSessionAsync()
     {
         var tokens = _tokensService.GetTokens();
-        if (tokens?.Success is false || tokens?.Response?.AccessToken == null)
+        var accessToken = tokens?.Response?.AccessToken;
+
+        if (tokens?.Success is false || string.IsNullOrWhiteSpace(accessToken))
         {
             await NavigateToLoginAsync();
             return;
         }
 
-        var exp = GetExpFromToken(tokens.Response.AccessToken);
+        var localUser = await _userService.Get();
+        if (localUser == null)
+        {
+            await ExecuteLogoutAsync();
+            return;
+        }
+
+        var exp = GetExpFromToken(accessToken);
         if (exp <= DateTime.UtcNow)
         {
-            if (tokens.Response.RefreshToken == null)
+            if (tokens.Response!.RefreshToken == null)
             {
                 await NavigateToLoginAsync();
                 return;
             }
-            
-            var refreshed = await _refreshService.TryRefreshAsync();
 
+            var refreshed = await _refreshService.TryRefreshAsync();
             if (!refreshed)
             {
-                Debug.WriteLine("[CheckSession]: Refresh failed, logging out");
                 await ExecuteLogoutAsync();
                 return;
             }
