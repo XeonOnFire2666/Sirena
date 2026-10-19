@@ -24,7 +24,6 @@ services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
 services.Configure<RealGoogleOptions>(builder.Configuration.GetSection("RealGoogleOptions"));
 services.AddApiAuthentication(builder.Configuration);
 
-// --- Базовые сервисы ---
 services.AddScoped<IJwtProvider, JwtProvider>();
 services.AddScoped<IUserRepository<User>, UserRepository>();
 services.AddScoped<IDayStatsRepository<DayStats>, DayStatsRepositoriy>();
@@ -32,8 +31,6 @@ services.AddScoped<ITokenRepository<RefreshToken>, RefreshTokensRepository>();
 services.AddScoped<UserService>();
 services.AddScoped<DayStatsService>();
 
-// --- Новые репозитории и сервисы для Workspace и TodoItems ---
-// Обрати внимание: мы регистрируем новые интерфейсы на новые реализации
 services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
 services.AddScoped<ITodoItemRepository, TodoItemRepository>();
 services.AddScoped<TodoItemService>();
