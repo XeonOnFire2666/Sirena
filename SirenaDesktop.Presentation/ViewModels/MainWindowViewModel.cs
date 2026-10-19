@@ -1,7 +1,5 @@
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
-using System.Runtime.CompilerServices;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using SirenaDesktop.Application.Contracts;
@@ -229,12 +227,5 @@ public partial class MainWindowViewModel : ObservableObject
 
         _authSignal.SignalLoginSuccess();
         await NavigateToMainMenuAsync();
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected void OnPropertyChanged([CallerMemberName] string name = null!)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }

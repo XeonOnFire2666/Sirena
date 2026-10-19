@@ -2,14 +2,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SirenaDesktop.Core.Models;
 
-namespace SirenaDesktop.Infrastructure.Persistence.Configurations;
-
 public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
 {
     public void Configure(EntityTypeBuilder<Workspace> builder)
     {
         builder.ToTable("Workspaces");
+
         builder.HasKey(w => w.Id);
+        builder.Property(w => w.Id).ValueGeneratedNever();
 
         builder.Property(w => w.WorkspaceTypeId).IsRequired();
 

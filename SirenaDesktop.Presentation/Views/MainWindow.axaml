@@ -18,9 +18,10 @@
                  MinHeight="444"
                  IsTitleBarVisible="False"
                  WindowDecorations="BorderOnly"
+                 BackgroundStyle="Flat"
+                 BackgroundAnimationEnabled="False"
                  x:DataType="viewModels:MainWindowViewModel"
-                 x:CompileBindings="True"
-                 Background="{DynamicResource AppBackgroundBrush}">
+                 x:CompileBindings="True">
 
     <suki:SukiWindow.Resources>
         <FontFamily x:Key="SourceSerifFont">
@@ -105,55 +106,10 @@
         </DataTemplate>
     </Window.DataTemplates>
 
-    <Grid RowDefinitions="Auto,Auto,*">
-        <Grid Grid.Row="0"
-              Height="32"
-              ColumnDefinitions="*,Auto"
-              ZIndex="100">
-            <Border x:Name="DragArea"
-                    Grid.Column="0"
-                    Background="Transparent"
-                    PointerPressed="DragArea_PointerPressed"
-                    DoubleTapped="DragArea_DoubleTapped" />
+    <Grid Background="{DynamicResource AppBackgroundBrush}">
 
-            <StackPanel Grid.Column="1"
-                        Orientation="Horizontal">
-                <Button Classes="caption" Click="Minimize_Click">
-                    <Path Data="M0,5 H10" />
-                </Button>
-                <Button Classes="caption" Click="Maximize_Click">
-                    <Path x:Name="MaximizeIcon" Data="M0,0 H10 V10 H0 Z" />
-                </Button>
-                <Button Classes="caption close" Click="Close_Click">
-                    <Path Data="M0,0 L10,10 M10,0 L0,10" />
-                </Button>
-            </StackPanel>
-        </Grid>
-
-        <Border Grid.Row="1"
-                IsVisible="{Binding IsConnectionBannerVisible}"
-                Padding="12,6"
-                Background="{Binding IsOffline, Converter={x:Static converters:OfflineToColorConverter.Instance}}">
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Center"
-                        Spacing="8">
-                <icons:MaterialIcon Kind="WifiOff"
-                                     Width="16"
-                                     Height="16"
-                                     Foreground="White"
-                                     IsVisible="{Binding IsOffline}" />
-                <icons:MaterialIcon Kind="Wifi"
-                                     Width="16"
-                                     Height="16"
-                                     Foreground="White"
-                                     IsVisible="{Binding !IsOffline}" />
-                <TextBlock Text="{Binding IsOffline, Converter={x:Static converters:OfflineToTextConverter.Instance}}"
-                           Foreground="White"
-                           FontFamily="{StaticResource SourceSerifFont}" />
-            </StackPanel>
-        </Border>
-
-        <Grid Grid.Row="2">
+        <!-- Контент на всё окно, с самого верха -->
+        <Grid>
             <TransitioningContentControl Content="{Binding CurrentViewModel}">
                 <TransitioningContentControl.PageTransition>
                     <CrossFade Duration="0:0:0.3" />
@@ -164,6 +120,50 @@
                          IsIndeterminate="True"
                          IsVisible="{Binding IsNavigationLoading}"
                          Foreground="{DynamicResource SukiPrimaryColor}" />
+        </Grid>
+
+        <!-- Баннер подключения: оверлей под кнопками, контент не двигает -->
+        <Border VerticalAlignment="Top"
+                Margin="0,32,0,0"
+                ZIndex="50"
+                IsVisible="{Binding IsConnectionBannerVisible}"
+                Padding="12,6"
+                Background="{Binding IsOffline, Converter={x:Static converters:OfflineToColorConverter.Instance}}">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Spacing="8">
+                <icons:MaterialIcon Kind="WifiOff" Width="16" Height="16" Foreground="White"
+                                    IsVisible="{Binding IsOffline}" />
+                <icons:MaterialIcon Kind="Wifi" Width="16" Height="16" Foreground="White"
+                                    IsVisible="{Binding !IsOffline}" />
+                <TextBlock Text="{Binding IsOffline, Converter={x:Static converters:OfflineToTextConverter.Instance}}"
+                           Foreground="White"
+                           FontFamily="{StaticResource SourceSerifFont}" />
+            </StackPanel>
+        </Border>
+
+        <!-- Заголовок: оверлей поверх всего -->
+        <Grid VerticalAlignment="Top"
+              Height="32"
+              ColumnDefinitions="*,Auto"
+              ZIndex="100">
+            <Border x:Name="DragArea"
+                    Grid.Column="0"
+                    Background="Transparent"
+                    PointerPressed="DragArea_PointerPressed"
+                    DoubleTapped="DragArea_DoubleTapped" />
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Classes="caption" Click="Minimize_Click">
+                    <Path Data="M0,5 H10" />
+                </Button>
+                <Button Classes="caption" Click="Maximize_Click">
+                    <Path x:Name="MaximizeIcon" Data="M0,0 H10 V10 H0 Z" />
+                </Button>
+                <Button Classes="caption close" Click="Close_Click">
+                    <Path Data="M0,0 L10,10 M10,0 L0,10" />
+                </Button>
+            </StackPanel>
         </Grid>
     </Grid>
 </suki:SukiWindow>

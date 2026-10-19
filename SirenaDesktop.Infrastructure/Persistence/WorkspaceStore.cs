@@ -111,7 +111,7 @@ public sealed class WorkspaceStore(IDbContextFactory<SirenaDbContext> factory)
 
         if (workspace is null)
         {
-            workspace = new Workspace();
+            workspace = new Workspace { Id = ws.Id };
             db.Workspaces.Add(workspace);
         }
 
@@ -122,14 +122,14 @@ public sealed class WorkspaceStore(IDbContextFactory<SirenaDbContext> factory)
             if (knownTodos.TryGetValue(incoming.Id, out var row))
             {
                 db.Entry(row).CurrentValues.SetValues(incoming);
-                if (workspace.Todos.All(t => t.Id != row.Id))
-                    workspace.Todos.Add(row);
+                row.WorkspaceId = workspace.Id;
             }
             else
             {
-                workspace.Todos.Add(new TodoItem
+                db.Set<TodoItem>().Add(new TodoItem
                 {
                     Id = incoming.Id,
+                    WorkspaceId = workspace.Id,
                     Title = incoming.Title,
                     StartTime = incoming.StartTime,
                     EndTime = incoming.EndTime,
